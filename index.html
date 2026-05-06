@@ -152,12 +152,18 @@ tr:hover td{background:#fafaf7}
 .cc-bot{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--ink3)}
 
 /* ── PAGINATION ── */
-.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--ink3)}
-.page-btns{display:flex;gap:4px}
-.page-btn{padding:5px 10px;border:1px solid var(--bd);border-radius:var(--rxs);background:var(--paper2);cursor:pointer;font-size:12px;color:var(--ink3);font-family:inherit}
-.page-btn:hover{border-color:var(--green);color:var(--green)}
-.page-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
-.page-btn:disabled{opacity:.35;cursor:default}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 14px;background:var(--paper2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;color:var(--ink3);flex-wrap:wrap;gap:8px}
+.pagi-info-wrap{display:flex;flex-direction:column;gap:2px}
+.pagi-total{font-size:13px;font-weight:600;color:var(--ink)}
+.pagi-range{font-size:11px;color:var(--ink4)}
+.page-btns{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.page-btn{min-width:32px;height:32px;padding:0 8px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--paper2);cursor:pointer;font-size:13px;color:var(--ink3);font-family:inherit;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.page-btn:hover:not(:disabled){border-color:var(--green);color:var(--green);background:var(--green-l)}
+.page-btn.active{background:var(--green);color:#fff;border-color:var(--green);font-weight:600}
+.page-btn:disabled{opacity:.3;cursor:not-allowed}
+.page-btn.pg-arrow{font-size:16px;font-weight:700}
+.page-size-sel{padding:4px 8px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;background:var(--paper2);color:var(--ink3);font-family:inherit;cursor:pointer}
+.page-size-sel:focus{outline:none;border-color:var(--green)}
 
 /* ── BOTTOM NAV ── */
 .bottom-nav{display:none;background:var(--paper2);border-top:1px solid var(--bd);padding:4px 0 env(safe-area-inset-bottom);flex-shrink:0}
@@ -390,7 +396,22 @@ tr:hover td{background:#fafaf7}
       </tr></thead><tbody id="tbody"></tbody></table></div>
       <div class="client-cards mb-only" id="cards"></div>
       <div class="pagination" id="pagi" style="display:none">
-        <span id="pagi-info"></span><div class="page-btns" id="pagi-btns"></div>
+        <div class="pagi-info-wrap">
+          <div class="pagi-total" id="pagi-total"></div>
+          <div class="pagi-range" id="pagi-range"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink4)">
+            Hiển thị:
+            <select class="page-size-sel" id="page-size-sel" onchange="changePageSize(this.value)">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+            / trang
+          </div>
+          <div class="page-btns" id="pagi-btns"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -741,7 +762,7 @@ async function sb(path,opts={}){
 //  STATE
 // ══════════════════════════════════════════
 let projects=[],allClients=[],units=[],docs=[],cart=[],cartClient=null;
-let currentProj=null,pg=1;const PG=50;
+let currentProj=null,pg=1;
 let editingId=null,detailId=null,editingUnitId=null;
 let importRows=null,importCols=[];
 let searchTimer=null,isOnline=navigator.onLine,isMobile=window.innerWidth<=700;
@@ -886,7 +907,7 @@ function renderClients(){
     <div class="sc"><div class="sc-lbl">☀️ Warm</div><div class="sc-val">${warm}</div><div class="sc-sub">Đang chăm sóc</div></div>
     <div class="sc"><div class="sc-lbl">✅ Đã chốt</div><div class="sc-val">${done}</div><div class="sc-sub">hợp đồng</div></div>
     <div class="sc"><div class="sc-lbl">⚠️ Quá hạn</div><div class="sc-val" style="color:var(--red)">${overdue}</div><div class="sc-sub">cần follow ngay</div></div>`;
-  const total=list.length,start=(pg-1)*PG,page=list.slice(start,start+PG);
+  const total=list.length,start=(pg-1)*pgSize,page=list.slice(start,start+pgSize);
   if(isMobile){
     document.getElementById('cards').innerHTML=page.length?page.map(c=>`
       <div class="cc" onclick="openDetail(${c.id})">
@@ -913,21 +934,49 @@ function renderClients(){
         </td>
       </tr>`).join(''):'<tr><td colspan="8"><div class="empty"><div class="empty-icon">🔍</div><div>Không tìm thấy</div></div></td></tr>';
   }
-  const totalPg=Math.ceil(total/PG);
-  if(total>PG){
-    document.getElementById('pagi').style.display='flex';
-    document.getElementById('pagi-info').textContent=`${start+1}–${Math.min(start+PG,total)} / ${total.toLocaleString()}`;
-    const s=Math.max(1,pg-2),e=Math.min(totalPg,pg+2);
-    let h=`<button class="page-btn" onclick="goPg(${pg-1})" ${pg===1?'disabled':''}>‹</button>`;
-    for(let p=s;p<=e;p++)h+=`<button class="page-btn ${p===pg?'active':''}" onclick="goPg(${p})">${p}</button>`;
-    h+=`<button class="page-btn" onclick="goPg(${pg+1})" ${pg===totalPg?'disabled':''}>›</button>`;
-    document.getElementById('pagi-btns').innerHTML=h;
-  } else {
-    document.getElementById('pagi').style.display=total>0?'flex':'none';
-    if(total>0){document.getElementById('pagi-info').textContent=total.toLocaleString()+' khách';document.getElementById('pagi-btns').innerHTML=''}
-  }
+
+  // ── Pagination bar — always show when data exists ──
+  const pagiEl=document.getElementById('pagi');
+  if(total===0){pagiEl.style.display='none';return}
+  pagiEl.style.display='flex';
+
+  const totalPg=Math.ceil(total/pgSize)||1;
+  const endRow=Math.min(start+pgSize,total);
+  document.getElementById('pagi-total').textContent=total.toLocaleString()+' khách hàng';
+  document.getElementById('pagi-range').textContent=`Trang ${pg} / ${totalPg} · Hiển thị ${start+1}–${endRow}`;
+
+  // Sync page size selector
+  const pss=document.getElementById('page-size-sel');
+  if(pss&&pss.value!==String(pgSize))pss.value=String(pgSize);
+
+  // Build page buttons: « ‹ 1 … p-1 p p+1 … last › »
+  const s=Math.max(1,pg-2),e=Math.min(totalPg,pg+2);
+  let h='';
+  h+=`<button class="page-btn pg-arrow" onclick="goPg(1)" ${pg===1?'disabled':''} title="Trang đầu">«</button>`;
+  h+=`<button class="page-btn pg-arrow" onclick="goPg(${pg-1})" ${pg===1?'disabled':''} title="Trang trước">‹</button>`;
+  if(s>1)h+=`<span style="color:var(--ink4);padding:0 2px;line-height:32px">…</span>`;
+  for(let p=s;p<=e;p++)h+=`<button class="page-btn ${p===pg?'active':''}" onclick="goPg(${p})">${p}</button>`;
+  if(e<totalPg)h+=`<span style="color:var(--ink4);padding:0 2px;line-height:32px">…</span>`;
+  h+=`<button class="page-btn pg-arrow" onclick="goPg(${pg+1})" ${pg===totalPg?'disabled':''} title="Trang sau">›</button>`;
+  h+=`<button class="page-btn pg-arrow" onclick="goPg(${totalPg})" ${pg===totalPg?'disabled':''} title="Trang cuối">»</button>`;
+  document.getElementById('pagi-btns').innerHTML=h;
 }
-function goPg(p){pg=p;renderClients()}
+let pgSize=10; // số khách / trang, có thể đổi qua selector
+function goPg(p){
+  const list=filtered();
+  const totalPg=Math.ceil(list.length/pgSize)||1;
+  if(p<1||p>totalPg)return;
+  pg=p;
+  renderClients();
+  // scroll lên đầu danh sách
+  const cb=document.querySelector('#tab-clients .content-body');
+  if(cb)cb.scrollTo({top:0,behavior:'smooth'});
+}
+function changePageSize(val){
+  pgSize=parseInt(val)||10;
+  pg=1;
+  renderClients();
+}
 function debounce(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>{pg=1;renderClients()},250)}
 function updateApptBadge(){const n=allClients.reduce((a,c)=>a+(c.appts||[]).length,0);const b=document.getElementById('appt-badge');b.textContent=n;b.style.display=n?'block':'none'}
 
