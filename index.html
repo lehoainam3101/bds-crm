@@ -360,7 +360,9 @@ tr:hover td{background:#fafaf7}
   <div class="sb-lbl">Menu chính</div>
   <div class="nav-item active" id="ni-clients" onclick="showTab('clients')"><span class="ni-icon">👥</span>Khách hàng</div>
   <div class="nav-item" id="ni-pipeline" onclick="showTab('pipeline')"><span class="ni-icon">📊</span>Pipeline</div>
-  <div class="nav-item" id="ni-upcoming" onclick="showTab('upcoming')"><span class="ni-icon">📅</span>Lịch hẹn</div>
+  <div class="nav-item" id="ni-calendar" onclick="showTab('calendar')"><span class="ni-icon">🗓️</span>Lịch tổng hợp</div>
+  <div class="nav-item" id="ni-dashboard" onclick="showTab('dashboard')"><span class="ni-icon">📈</span>Dashboard</div>
+  <div class="nav-item" id="ni-reports" onclick="showTab('reports')"><span class="ni-icon">💰</span>Báo cáo & Hoa hồng</div>
   <div class="nav-item" id="ni-catalog" onclick="showTab('catalog')"><span class="ni-icon">🏠</span>Danh sách căn</div>
   <div class="nav-item" id="ni-docs" onclick="showTab('docs')"><span class="ni-icon">📁</span>Tài liệu dự án</div>
   <div class="nav-item" id="ni-import" onclick="showTab('import')"><span class="ni-icon">📤</span>Import Excel</div>
@@ -503,6 +505,52 @@ tr:hover td{background:#fafaf7}
     </div>
   </div>
 
+
+  <!-- ── TAB: CALENDAR ── -->
+  <div id="tab-calendar" class="tc" style="display:none">
+    <div class="content-hd">
+      <div class="content-title" id="cal-title">Lịch hẹn tổng hợp</div>
+      <div style="display:flex;gap:6px">
+        <button class="cal-nav-btn" onclick="calMove(-1)">‹</button>
+        <button class="btn btn-o btn-sm" onclick="calToday()">Hôm nay</button>
+        <button class="cal-nav-btn" onclick="calMove(1)">›</button>
+      </div>
+    </div>
+    <div class="content-body">
+      <div class="cal-wrap">
+        <div class="cal-grid" id="cal-dow-row"></div>
+        <div class="cal-grid" id="cal-grid" style="margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: DASHBOARD ── -->
+  <div id="tab-dashboard" class="tc" style="display:none">
+    <div class="content-hd">
+      <div class="content-title">Dashboard tổng quan</div>
+      <div style="display:flex;gap:6px">
+        <select id="dash-proj" onchange="renderDashboard()" style="padding:5px 10px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;background:var(--paper2);color:var(--ink);font-family:inherit">
+          <option value="">Tất cả dự án</option>
+        </select>
+        <select id="dash-period" onchange="renderDashboard()" style="padding:5px 10px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;background:var(--paper2);color:var(--ink);font-family:inherit">
+          <option value="3">3 tháng gần đây</option>
+          <option value="6" selected>6 tháng gần đây</option>
+          <option value="12">12 tháng</option>
+        </select>
+      </div>
+    </div>
+    <div class="content-body" id="dashboard-body"></div>
+  </div>
+
+  <!-- ── TAB: REPORTS ── -->
+  <div id="tab-reports" class="tc" style="display:none">
+    <div class="content-hd">
+      <div class="content-title">Báo cáo & Hoa hồng</div>
+      <button class="btn btn-g btn-sm" onclick="openAddCommission()">+ Ghi nhận hoa hồng</button>
+    </div>
+    <div class="content-body" id="reports-body"></div>
+  </div>
+
 </div><!-- .main -->
 </div><!-- .body -->
 
@@ -510,9 +558,9 @@ tr:hover td{background:#fafaf7}
 <div class="bottom-nav">
   <button class="bn active" id="bn-clients" onclick="showTab('clients')"><div class="bn-icon">👥</div><div class="bn-lbl">Khách</div></button>
   <button class="bn" id="bn-pipeline" onclick="showTab('pipeline')"><div class="bn-icon">📊</div><div class="bn-lbl">Pipeline</div></button>
-  <button class="bn" id="bn-upcoming" onclick="showTab('upcoming')"><div class="bn-icon">📅</div><div class="bn-lbl">Lịch hẹn</div><div class="bn-badge" id="appt-badge" style="display:none"></div></button>
-  <button class="bn" id="bn-catalog" onclick="showTab('catalog')"><div class="bn-icon">🏠</div><div class="bn-lbl">Căn hộ</div></button>
-  <button class="bn" id="bn-docs" onclick="showTab('docs')"><div class="bn-icon">📁</div><div class="bn-lbl">Tài liệu</div></button>
+  <button class="bn" id="bn-calendar" onclick="showTab('calendar')"><div class="bn-icon">🗓️</div><div class="bn-lbl">Lịch</div><div class="bn-badge" id="appt-badge" style="display:none"></div></button>
+  <button class="bn" id="bn-dashboard" onclick="showTab('dashboard')"><div class="bn-icon">📈</div><div class="bn-lbl">Dashboard</div></button>
+  <button class="bn" id="bn-reports" onclick="showTab('reports')"><div class="bn-icon">💰</div><div class="bn-lbl">Báo cáo</div></button>
 </div>
 
 </div><!-- .app -->
@@ -525,7 +573,7 @@ tr:hover td{background:#fafaf7}
   <div class="modal">
     <div class="drag-handle"></div>
     <div class="modal-hd">
-      <div><div class="modal-title" id="d-name"></div><div class="modal-sub" id="d-sub"></div></div>
+      <div><div class="modal-title" id="d-name"></div><div class="modal-sub" id="d-sub"></div><div id="d-score-wrap" style="margin-top:6px"></div></div>
       <button class="modal-x" onclick="closeModal('modal-detail')">×</button>
     </div>
     <div class="modal-body">
@@ -533,6 +581,7 @@ tr:hover td{background:#fafaf7}
         <div class="msec-title">Cập nhật trạng thái</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="d-stage-btns"></div>
       </div>
+      <div class="msec" id="d-contact-btns-wrap" style="margin-bottom:12px"></div>
       <div class="msec">
         <div class="msec-title">Đặt lịch hẹn mới</div>
         <div class="form-row">
@@ -740,9 +789,51 @@ tr:hover td{background:#fafaf7}
   <div class="lb-counter" id="lb-counter"></div>
 </div>
 
+
+<!-- ── MODAL: COMMISSION ── -->
+<div class="overlay" id="modal-comm" style="display:none" onclick="if(event.target===this)closeModal('modal-comm')">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-hd">
+      <div class="modal-title">Ghi nhận hoa hồng</div>
+      <button class="modal-x" onclick="closeModal('modal-comm')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div><label class="fl">Khách hàng *</label>
+          <select class="fs" id="cm-client"></select>
+        </div>
+        <div><label class="fl">Dự án</label>
+          <select class="fs" id="cm-proj"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div><label class="fl">Giá trị căn (tỷ)</label>
+          <input class="fi" id="cm-value" type="number" step="0.1" placeholder="vd: 3.5"/>
+        </div>
+        <div><label class="fl">Tỷ lệ hoa hồng (%)</label>
+          <input class="fi" id="cm-rate" type="number" step="0.1" placeholder="vd: 1.5"/>
+        </div>
+      </div>
+      <div id="cm-calc" style="background:var(--green-l);border-radius:var(--rs);padding:10px 14px;margin-bottom:12px;font-size:13px;display:none">
+        <span style="color:var(--ink3)">Hoa hồng dự kiến:</span>
+        <span style="font-weight:700;color:var(--green-d);font-size:16px;margin-left:8px" id="cm-calc-val">—</span>
+      </div>
+      <div class="fg"><label class="fl">Ngày chốt</label>
+        <input class="fi" id="cm-date" type="date"/>
+      </div>
+      <div class="fg"><label class="fl">Ghi chú</label>
+        <input class="fi" id="cm-note" placeholder="Tên căn, tầng, block..."/>
+      </div>
+      <button class="btn btn-g" style="width:100%;justify-content:center" onclick="saveCommission()">💰 Lưu hoa hồng</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 // ══════════════════════════════════════════
 //  SUPABASE CONFIG — thay bằng project của bạn
@@ -808,7 +899,7 @@ function toggleMenu(){document.getElementById('sidebar').classList.toggle('open'
 // ══════════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════════
-const ALL_TABS=['clients','pipeline','upcoming','catalog','docs','import'];
+const ALL_TABS=['clients','pipeline','calendar','dashboard','reports','catalog','docs','import'];
 function showTab(name){
   document.querySelectorAll('.tc').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+name).style.display='block';
@@ -821,6 +912,9 @@ function showTab(name){
   if(name==='catalog')renderCatalog();
   if(name==='docs')renderDocs();
   if(name==='pipeline')renderPipeline();
+  if(name==='calendar')renderCalendar();
+  if(name==='dashboard')renderDashboard();
+  if(name==='reports')renderReports();
 }
 
 // ══════════════════════════════════════════
@@ -845,7 +939,7 @@ async function loadProjects(){
   try{const d=await sb('projects?select=*&order=name');projects=d.map(p=>p.name);sc('projects',projects)}
   catch(e){const c=lc('projects');if(c)projects=c;}
   renderSidebar();
-  ['ac-proj','u-proj','doc-proj','imp-proj','pipeline-proj-filter'].forEach(id=>{
+  ['ac-proj','u-proj','doc-proj','imp-proj','pipeline-proj-filter','dash-proj','cm-proj'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.innerHTML=['<option value="">-- Chọn dự án --</option>',...projects.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`)].join('');
   });
@@ -917,6 +1011,11 @@ function renderClients(){
           <span class="badge ${bc(c.status)}">${c.status}</span>
         </div>
         <div class="cc-bot"><span>📞 ${esc(c.phone||'—')}</span><span>${followBadge(c.followup)||c.budget||'—'}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <div class="score-ring ${scoreCls(calcScore(c))} " style="width:26px;height:26px;font-size:10px">${calcScore(c)}</div>
+          <div class="score-bar-mini" style="flex:1"><div class="score-bar-fill" style="width:${calcScore(c)}%;background:${calcScore(c)>=70?'#1a6b45':calcScore(c)>=40?'#c97c1a':'#1a4a8a'}"></div></div>
+          ${c.phone?`<a href="${zaloUrl(c)}" target="_blank" class="zalo-btn" style="font-size:11px;padding:4px 9px;text-decoration:none">💬 Zalo</a>`:''}
+        </div>
       </div>`).join(''):'<div class="empty"><div class="empty-icon">🔍</div><div>Không tìm thấy</div></div>';
   } else {
     document.getElementById('tbody').innerHTML=page.length?page.map((c,i)=>`
@@ -929,6 +1028,7 @@ function renderClients(){
         <td>${followBadge(c.followup)||'<span style="color:var(--ink4);font-size:11px">—</span>'}</td>
         <td>
           <button class="btn btn-o btn-sm" onclick="openDetail(${c.id})" style="font-size:11px">📝${(c.notes||[]).length?'<span class="dot-note"></span>':''}</button>
+          ${c.phone?`<a href="${zaloUrl(c)}" target="_blank" class="btn btn-o btn-sm" style="font-size:11px;margin-left:3px;text-decoration:none;background:#0068FF;color:#fff;border-color:#0068FF">💬</a>`:''}
           <button class="btn btn-o btn-sm" onclick="editClient(${c.id})" style="font-size:11px;margin-left:3px">✏️</button>
           <button class="btn-del btn-sm" onclick="delClient(${c.id})" style="margin-left:3px">🗑️</button>
         </td>
@@ -1146,6 +1246,8 @@ function openDetail(id){
   detailId=id;const c=allClients.find(x=>x.id===id);if(!c)return;
   document.getElementById('d-name').textContent=c.name;
   document.getElementById('d-sub').textContent=(c.project||'')+(c.phone?' · '+c.phone:'')+(c.source?' · '+c.source:'');
+  const sw=document.getElementById('d-score-wrap');if(sw)sw.innerHTML=scoreHtml(c);
+  renderContactBtns(c);
   // Stage buttons
   document.getElementById('d-stage-btns').innerHTML=STAGES.map(s=>`
     <button onclick="updateStage(${id},'${s.id}')" style="padding:5px 12px;border-radius:999px;border:1px solid ${s.color};background:${c.status===s.id?s.color:'transparent'};color:${c.status===s.id?'#fff':s.color};font-size:12px;cursor:pointer;font-family:inherit;font-weight:600">${s.label}</button>`).join('');
@@ -1529,6 +1631,360 @@ function ini(n){return n.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpper
 function bc(s){return s==='Hot'?'badge-hot':s==='Warm'?'badge-warm':s==='Cold'?'badge-cold':'badge-done'}
 function today(){return new Date().toLocaleDateString('vi-VN')}
 function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),3000)}
+
+
+// ══════════════════════════════════════════
+//  LEAD SCORING
+// ══════════════════════════════════════════
+function calcScore(c){
+  let s=0;
+  const st={'Cold':5,'Warm':20,'Hot':40,'Đã chốt':70};
+  s+=st[c.status]||0;
+  s+=Math.min((c.notes||[]).length*5,20);
+  s+=Math.min((c.appts||[]).length*10,20);
+  if(c.budget)s+=8;
+  if(c.email)s+=5;
+  if(c.followup){const n=new Date();n.setHours(0,0,0,0);if(new Date(c.followup)>=n)s+=8;}
+  const src={'Giới thiệu':15,'Zalo':10,'Facebook':8,'Website':6,'Sàn giao dịch':5};
+  s+=src[c.source]||0;
+  return Math.min(Math.round(s),100);
+}
+function scoreCls(s){return s>=70?'score-done':s>=40?'score-warm':s>=20?'score-hot':'score-cold'}
+function scoreLabel(s){return s>=70?'Tiềm năng cao':s>=40?'Khá tốt':s>=20?'Cần thêm thông tin':'Mới tiếp cận'}
+function scoreHtml(c){
+  const s=calcScore(c);
+  const cl=scoreCls(s);
+  return `<div style="display:flex;align-items:center;gap:8px">
+    <div class="score-ring ${cl}">${s}</div>
+    <div><div style="font-size:11px;font-weight:600;color:var(--ink3)">${scoreLabel(s)}</div>
+    <div class="score-bar-mini" style="width:80px"><div class="score-bar-fill" style="width:${s}%;background:${s>=70?'#1a6b45':s>=40?'#c97c1a':s>=20?'#c0392b':'#1a4a8a'}"></div></div></div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  ZALO INTEGRATION
+// ══════════════════════════════════════════
+function zaloUrl(c){
+  const phone=(c.phone||'').replace(/[^0-9]/g,'');
+  return 'https://zalo.me/'+phone;
+}
+function openZalo(c){
+  if(!c.phone){toast('Khách chưa có số điện thoại!');return}
+  window.open(zaloUrl(c),'_blank');
+}
+function renderContactBtns(c){
+  const el=document.getElementById('d-contact-btns-wrap');if(!el)return;
+  const btns=[];
+  if(c.phone)btns.push(`<a href="tel:${esc(c.phone)}" class="btn btn-o btn-sm" style="text-decoration:none">📞 Gọi điện</a>`);
+  if(c.phone)btns.push(`<a href="${esc(zaloUrl(c))}" target="_blank" class="zalo-btn" style="font-size:12px;padding:5px 10px;border-radius:var(--rs)">💬 Nhắn Zalo</a>`);
+  if(c.email)btns.push(`<a href="mailto:${esc(c.email)}" class="btn btn-o btn-sm" style="text-decoration:none">✉️ Email</a>`);
+  el.innerHTML=btns.length?`<div class="msec-title">Liên hệ nhanh</div><div style="display:flex;gap:7px;flex-wrap:wrap">${btns.join('')}</div>`:'';
+}
+
+// ══════════════════════════════════════════
+//  CALENDAR VIEW
+// ══════════════════════════════════════════
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+const MONS_VN=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+const DOWS=['CN','T2','T3','T4','T5','T6','T7'];
+
+function calToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();renderCalendar()}
+function calMove(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++}else if(calMonth<0){calMonth=11;calYear--}renderCalendar()}
+
+function renderCalendar(){
+  document.getElementById('cal-title').textContent=MONS_VN[calMonth]+' '+calYear;
+  // DOW header
+  document.getElementById('cal-dow-row').innerHTML=DOWS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  // Build appt map by date string
+  const apptMap={};
+  allClients.forEach(c=>(c.appts||[]).forEach(a=>{
+    const dk=a.dt?a.dt.slice(0,10):'';
+    if(dk)(apptMap[dk]=apptMap[dk]||[]).push({...a,client:c});
+  }));
+  const today=new Date();today.setHours(0,0,0,0);
+  const firstDay=new Date(calYear,calMonth,1).getDay(); // 0=Sun
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const daysInPrev=new Date(calYear,calMonth,0).getDate();
+  let cells='';
+  // prev month padding
+  for(let i=firstDay-1;i>=0;i--){
+    cells+=`<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-i}</div></div>`;
+  }
+  // current month
+  for(let d=1;d<=daysInMonth;d++){
+    const dk=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dt=new Date(calYear,calMonth,d);dt.setHours(0,0,0,0);
+    const isToday=dt.getTime()===today.getTime();
+    const appts=apptMap[dk]||[];
+    const dots=appts.slice(0,3).map(a=>{
+      const cl=a.client.status==='Hot'?'hot':a.client.status==='Warm'?'warm':'';
+      return `<div class="cal-dot ${cl}" onclick="event.stopPropagation();openDetail(${a.client.id})" title="${esc(a.title)} – ${esc(a.client.name)}">${esc(a.title.slice(0,12))}</div>`;
+    }).join('');
+    const moreDot=appts.length>3?`<div style="font-size:9px;color:var(--ink4)">+${appts.length-3} nữa</div>`:'';
+    cells+=`<div class="cal-day ${isToday?'today':''}">
+      <div class="cal-day-num">${d}${appts.length?`<span style="font-size:9px;color:var(--green);margin-left:3px">●</span>`:''}</div>
+      ${dots}${moreDot}
+    </div>`;
+  }
+  // next month padding to fill 6 rows
+  const total=firstDay+daysInMonth;const remainder=(7-total%7)%7;
+  for(let d=1;d<=remainder;d++){cells+=`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;}
+  document.getElementById('cal-grid').innerHTML=cells;
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════
+let _dashCharts=[];
+function destroyDashCharts(){_dashCharts.forEach(c=>{try{c.destroy()}catch(e){}});_dashCharts=[]}
+
+function renderDashboard(){
+  destroyDashCharts();
+  const projF=document.getElementById('dash-proj')?.value||'';
+  const periodM=parseInt(document.getElementById('dash-period')?.value||6);
+  const list=projF?allClients.filter(c=>c.project===projF):allClients;
+
+  // KPIs
+  const now=new Date();now.setHours(0,0,0,0);
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const newThisMonth=list.filter(c=>c.created_at&&new Date(c.created_at)>=monthStart).length;
+  const hotWarm=list.filter(c=>c.status==='Hot'||c.status==='Warm').length;
+  const closed=list.filter(c=>c.status==='Đã chốt').length;
+  const convRate=list.length?Math.round(closed/list.length*100):0;
+  const avgScore=list.length?Math.round(list.reduce((a,c)=>a+calcScore(c),0)/list.length):0;
+  const overdue=list.filter(c=>c.followup&&new Date(c.followup)<now).length;
+
+  // Monthly buckets
+  const months=[],labels=[];
+  for(let i=periodM-1;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({year:d.getFullYear(),month:d.getMonth(),count:0,closed:0});
+    labels.push(['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'][d.getMonth()]+'/'+(d.getFullYear()%100));
+  }
+  list.forEach(c=>{
+    if(!c.created_at)return;
+    const d=new Date(c.created_at);
+    const bk=months.find(m=>m.year===d.getFullYear()&&m.month===d.getMonth());
+    if(bk){bk.count++;if(c.status==='Đã chốt')bk.closed++}
+  });
+
+  // Source analysis
+  const srcMap={};
+  list.forEach(c=>{const s=c.source||'Khác';srcMap[s]=(srcMap[s]||0)+1});
+  const srcEntries=Object.entries(srcMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // Project distribution
+  const projMap={};
+  list.forEach(c=>{const p=c.project||'Chưa phân loại';projMap[p]=(projMap[p]||0)+1});
+  const projEntries=Object.entries(projMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const body=document.getElementById('dashboard-body');
+  body.innerHTML=`
+  <div class="dash-grid">
+    <div class="kpi-card"><div class="kpi-lbl">Tổng khách</div><div class="kpi-val">${list.length}</div><div class="kpi-sub">trong hệ thống</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Thêm tháng này</div><div class="kpi-val">${newThisMonth}</div><div class="kpi-sub">khách mới</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Tỷ lệ chốt</div><div class="kpi-val">${convRate}%</div><div class="kpi-sub">${closed} đã chốt</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Điểm TB</div><div class="kpi-val">${avgScore}</div><div class="kpi-sub">lead score</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Hot + Warm</div><div class="kpi-val">${hotWarm}</div><div class="kpi-sub">đang theo dõi</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Quá hạn follow</div><div class="kpi-val" style="color:var(--red)">${overdue}</div><div class="kpi-sub ${overdue>0?'neg':''}">cần xử lý ngay</div></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <div class="chart-title">Khách mới theo tháng</div>
+      <div style="position:relative;height:200px"><canvas id="ch-monthly" role="img" aria-label="Biểu đồ khách mới theo tháng">Khách mới theo ${periodM} tháng gần nhất.</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Phân bổ trạng thái</div>
+      <div style="position:relative;height:200px"><canvas id="ch-status" role="img" aria-label="Phân bổ trạng thái khách hàng">Tỷ lệ Cold/Warm/Hot/Đã chốt.</canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-card">
+      <div class="chart-title">Nguồn khách hiệu quả</div>
+      <div id="src-bars">${srcEntries.map(([s,n])=>`
+        <div class="source-row">
+          <div class="source-name">${esc(s)}</div>
+          <div class="source-track"><div class="source-fill" style="width:${Math.round(n/list.length*100)}%"></div></div>
+          <div class="source-count">${n}</div>
+        </div>`).join('')}</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top dự án</div>
+      <div id="proj-bars">${projEntries.map(([p,n],i)=>{const colors=['#1a6b45','#c8a84b','#c0392b','#1a4a8a','#8faa9a'];return`
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px" title="${esc(p)}">${esc(p)}</span><span style="font-weight:600">${n}</span></div>
+          <div style="height:6px;background:var(--paper3);border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;background:${colors[i]};width:${Math.round(n/list.length*100)}%"></div></div>
+        </div>`}).join('')}
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Phễu chuyển đổi</div>
+    ${['Cold','Warm','Hot','Đã chốt'].map((s,i)=>{
+      const n=list.filter(c=>c.status===s).length;
+      const pct=list.length?Math.round(n/list.length*100):0;
+      const colors=['#eef3fb','#fef6e8','#fdf0ef','#e6f4ec'];
+      const textColors=['#1a4a8a','#c97c1a','#c0392b','#1a6b45'];
+      return `<div class="funnel-bar" style="background:${colors[i]};color:${textColors[i]};width:${Math.max(pct,8)}%;min-width:120px">
+        ${s} — ${n} khách (${pct}%)
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  // Chart.js — Monthly
+  const chM=new Chart(document.getElementById('ch-monthly'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Khách mới',data:months.map(m=>m.count),backgroundColor:'#1a6b4588',borderColor:'#1a6b45',borderWidth:1.5,borderRadius:4},
+      {label:'Đã chốt',data:months.map(m=>m.closed),backgroundColor:'#c8a84b88',borderColor:'#c8a84b',borderWidth:1.5,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11}},beginAtZero:true}}}
+  });
+  _dashCharts.push(chM);
+
+  // Chart.js — Status donut
+  const statusData=[
+    {s:'Cold',c:'#1a4a8a'},
+    {s:'Warm',c:'#c97c1a'},
+    {s:'Hot',c:'#c0392b'},
+    {s:'Đã chốt',c:'#1a6b45'},
+  ].map(x=>({...x,n:list.filter(c=>c.status===x.s).length})).filter(x=>x.n>0);
+  const chS=new Chart(document.getElementById('ch-status'),{
+    type:'doughnut',
+    data:{labels:statusData.map(x=>x.s),datasets:[{data:statusData.map(x=>x.n),backgroundColor:statusData.map(x=>x.c+'cc'),borderColor:statusData.map(x=>x.c),borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},cutout:'60%'}
+  });
+  _dashCharts.push(chS);
+}
+
+// ══════════════════════════════════════════
+//  REPORTS & COMMISSION
+// ══════════════════════════════════════════
+function renderReports(){
+  const commissions=lc('commissions')||[];
+  const total=commissions.reduce((a,c)=>a+(c.amount||0),0);
+  const thisM=new Date();thisM.setDate(1);thisM.setHours(0,0,0,0);
+  const thisMonthTotal=commissions.filter(c=>c.date&&new Date(c.date)>=thisM).reduce((a,c)=>a+(c.amount||0),0);
+
+  // Monthly summary
+  const monthMap={};
+  commissions.forEach(c=>{
+    if(!c.date)return;
+    const mk=c.date.slice(0,7);
+    monthMap[mk]=(monthMap[mk]||0)+(c.amount||0);
+  });
+  const monthRows=Object.entries(monthMap).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,12);
+
+  document.getElementById('reports-body').innerHTML=`
+  <div class="dash-grid" style="margin-bottom:16px">
+    <div class="kpi-card"><div class="kpi-lbl">Tổng hoa hồng</div><div class="kpi-val" style="font-size:18px">${fmtMoney(total)}</div><div class="kpi-sub">tất cả thời gian</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Tháng này</div><div class="kpi-val" style="font-size:18px">${fmtMoney(thisMonthTotal)}</div><div class="kpi-sub">tháng ${new Date().getMonth()+1}/${new Date().getFullYear()}</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Số giao dịch</div><div class="kpi-val">${commissions.length}</div><div class="kpi-sub">đã ghi nhận</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">TB mỗi deal</div><div class="kpi-val" style="font-size:18px">${commissions.length?fmtMoney(Math.round(total/commissions.length)):'-'}</div><div class="kpi-sub">hoa hồng</div></div>
+  </div>
+
+  <div class="report-section">
+    <div class="report-title">Lịch sử hoa hồng
+      <button class="btn btn-o btn-sm" onclick="exportCommissions()">💾 Xuất Excel</button>
+    </div>
+    ${commissions.length?commissions.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(c=>`
+      <div class="comm-row">
+        <div>
+          <div class="comm-name">${esc(c.clientName||'—')}</div>
+          <div style="font-size:11px;color:var(--ink3)">${esc(c.project||'')} · ${esc(c.note||'')} · ${c.date?fmtDate(c.date):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="comm-amt">${fmtMoney(c.amount)}</span>
+          <button class="btn-del" onclick="deleteCommission('${c.id}')" style="font-size:11px;padding:2px 7px">×</button>
+        </div>
+      </div>`).join('')
+    :'<div style="text-align:center;padding:24px;color:var(--ink4);font-size:13px">Chưa có hoa hồng nào. Bấm "+ Ghi nhận hoa hồng" để thêm.</div>'}
+  </div>
+
+  <div class="report-section">
+    <div class="report-title">Doanh thu theo tháng</div>
+    ${monthRows.length?monthRows.map(([m,v])=>`
+      <div class="source-row">
+        <div class="source-name">${m}</div>
+        <div class="source-track"><div class="source-fill" style="width:${Math.round(v/Math.max(...monthRows.map(x=>x[1]))*100)}%"></div></div>
+        <div style="font-size:12px;font-weight:600;color:var(--green-d);min-width:80px;text-align:right">${fmtMoney(v)}</div>
+      </div>`).join('')
+    :'<div style="font-size:13px;color:var(--ink4);text-align:center;padding:16px">Chưa có dữ liệu</div>'}
+  </div>`;
+}
+
+function fmtMoney(n){
+  if(!n)return '0 ₫';
+  if(n>=1000000000)return (n/1000000000).toFixed(1).replace('.0','')+'B ₫';
+  if(n>=1000000)return (n/1000000).toFixed(0)+'M ₫';
+  return n.toLocaleString('vi-VN')+'₫';
+}
+
+function openAddCommission(){
+  // Populate client select
+  const el=document.getElementById('cm-client');
+  if(el)el.innerHTML='<option value="">-- Chọn khách --</option>'+allClients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  document.getElementById('cm-value').value='';
+  document.getElementById('cm-rate').value='1.5';
+  document.getElementById('cm-note').value='';
+  document.getElementById('cm-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('cm-calc').style.display='none';
+  document.getElementById('modal-comm').style.display='flex';
+  // Auto-calc on input
+  ['cm-value','cm-rate'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.oninput=updateCommCalc;
+  });
+}
+function updateCommCalc(){
+  const v=parseFloat(document.getElementById('cm-value').value)||0;
+  const r=parseFloat(document.getElementById('cm-rate').value)||0;
+  const calc=document.getElementById('cm-calc');
+  if(v&&r){
+    const amount=v*r/100*1000000000; // tỷ * % = tiền
+    document.getElementById('cm-calc-val').textContent=fmtMoney(amount);
+    calc.style.display='block';
+  } else {
+    calc.style.display='none';
+  }
+}
+function saveCommission(){
+  const clientId=parseInt(document.getElementById('cm-client').value);
+  const client=allClients.find(x=>x.id===clientId);
+  const v=parseFloat(document.getElementById('cm-value').value)||0;
+  const r=parseFloat(document.getElementById('cm-rate').value)||0;
+  if(!client){toast('Chọn khách hàng!');return}
+  if(!v||!r){toast('Nhập giá trị và tỷ lệ hoa hồng!');return}
+  const amount=v*r/100*1000000000;
+  const comm={
+    id:Date.now().toString(),clientId,clientName:client.name,
+    project:document.getElementById('cm-proj').value||client.project||'',
+    value:v,rate:r,amount,note:document.getElementById('cm-note').value.trim(),
+    date:document.getElementById('cm-date').value
+  };
+  const comms=lc('commissions')||[];
+  comms.push(comm);
+  sc('commissions',comms);
+  closeModal('modal-comm');
+  toast('Đã lưu hoa hồng: '+fmtMoney(amount)+' 💰');
+  renderReports();
+}
+function deleteCommission(id){
+  if(!confirm('Xóa giao dịch này?'))return;
+  const comms=(lc('commissions')||[]).filter(c=>c.id!==id);
+  sc('commissions',comms);
+  renderReports();toast('Đã xóa');
+}
+function exportCommissions(){
+  const comms=lc('commissions')||[];
+  const rows=[['Ngày','Khách hàng','Dự án','Giá trị căn (tỷ)','Tỷ lệ (%)','Hoa hồng','Ghi chú']];
+  comms.forEach(c=>rows.push([c.date||'',c.clientName||'',c.project||'',c.value||'',c.rate||'',c.amount||'',c.note||'']));
+  const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Hoa hồng');
+  XLSX.writeFile(wb,'HoaHong_'+new Date().toLocaleDateString('vi-VN').replace(/\//g,'-')+'.xlsx');
+  toast('Đã xuất báo cáo hoa hồng!');
+}
 
 // START
 init();
