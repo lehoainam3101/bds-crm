@@ -967,7 +967,17 @@ const H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer 
 
 async function sb(path,opts={}){
   const r=await fetch(SB+'/rest/v1/'+path,{headers:H,...opts});
-  if(!r.ok){const t=await r.text();throw new Error(t)}
+  if(!r.ok){
+    let msg=`HTTP ${r.status}`;
+    try{
+      const j=await r.json();
+      // Supabase trả về { code, message, details, hint }
+      msg=j.message||j.error||JSON.stringify(j);
+      if(j.details)msg+='\nDetails: '+j.details;
+      if(j.hint)msg+='\nHint: '+j.hint;
+    }catch(e){msg+=': '+await r.text().catch(()=>'')}
+    throw new Error(msg);
+  }
   const t=await r.text();return t?JSON.parse(t):[];
 }
 
@@ -1336,25 +1346,66 @@ function editClient(id){
   document.getElementById('modal-add').style.display='flex';
 }
 async function saveClient(){
-  const name=document.getElementById('ac-name').value.trim();if(!name){toast('Nhập tên khách hàng!');return}
-  const payload={name,phone:document.getElementById('ac-phone').value.trim(),email:document.getElementById('ac-email').value.trim(),budget:document.getElementById('ac-budget').value.trim(),project:document.getElementById('ac-proj').value,status:document.getElementById('ac-st').value,source:document.getElementById('ac-source').value,followup:document.getElementById('ac-followup').value||null,updated_at:new Date().toISOString()};
+  const name=document.getElementById('ac-name').value.trim();
+  if(!name){toast('Nhập tên khách hàng!');return}
+
+  // Helper: trả về null nếu chuỗi rỗng (Supabase không chấp nhận "" cho DATE/TEXT nullable)
+  const v=(id)=>{const val=document.getElementById(id)?.value?.trim();return val||null;}
+
+  const basePayload={
+    name,
+    phone:       v('ac-phone'),
+    email:       v('ac-email'),
+    budget:      v('ac-budget'),
+    project:     v('ac-proj'),
+    status:      document.getElementById('ac-st').value||'Cold',
+    source:      v('ac-source'),
+    followup:    v('ac-followup'),   // DATE — null nếu chưa chọn
+  };
+
   setSyncing();
   try{
     if(editingId){
       const note=document.getElementById('ac-note').value.trim();
-      const ex=allClients.find(x=>x.id===editingId);
+      const ex=allClients.find(x=>x.id===editingId)||{};
       if(note)(ex.notes=ex.notes||[]).unshift({date:today(),text:note});
-      payload.notes=ex.notes||[];
+      const payload={...basePayload, notes:ex.notes||[]};
+      // Thêm updated_at chỉ nếu cột tồn tại (safe update)
+      try{payload.updated_at=new Date().toISOString()}catch(e){}
       await sb(`clients?id=eq.${editingId}`,{method:'PATCH',body:JSON.stringify(payload)});
-      toast('Đã cập nhật!');
+      toast('Đã cập nhật! ✅');
     } else {
       const note=document.getElementById('ac-note').value.trim();
-      payload.notes=note?[{date:today(),text:note}]:[];payload.appts=[];
+      const payload={
+        ...basePayload,
+        notes: note?[{date:today(),text:note}]:[],
+        appts: [],
+      };
       await sb('clients',{method:'POST',body:JSON.stringify(payload)});
       toast('Đã thêm khách hàng! ✅');
     }
-    closeModal('modal-add');await loadClients();setSynced();
-  }catch(e){toast('Lỗi: '+e.message);setSynced()}
+    closeModal('modal-add');
+    await loadClients();
+    setSynced();
+  }catch(e){
+    setSynced();
+    // Hiển thị lỗi chi tiết để dễ debug
+    const msg=e.message||'Lỗi không xác định';
+    console.error('saveClient error:',msg);
+    // Phân tích lỗi phổ biến để đưa ra hướng dẫn cụ thể
+    if(msg.includes('column')&&msg.includes('does not exist')){
+      const col=msg.match(/"([^"]+)"/)?.[1]||'';
+      toast(`❌ Cột "${col}" chưa có trong bảng — Chạy lại SQL Setup`);
+    } else if(msg.includes('violates')||msg.includes('constraint')){
+      toast('❌ Vi phạm ràng buộc dữ liệu — Kiểm tra bảng Supabase');
+    } else if(msg.includes('invalid input syntax')){
+      toast('❌ Sai định dạng dữ liệu (ngày/số) — '+msg.slice(0,80));
+    } else if(msg.includes('permission denied')||msg.includes('policy')){
+      toast('❌ Thiếu quyền — Chạy SQL Setup để tạo RLS policy');
+    } else {
+      toast('❌ Lỗi: '+msg.slice(0,120));
+    }
+  }
 }
 async function delClient(id){
   if(!confirm('Xóa khách hàng này?'))return;
