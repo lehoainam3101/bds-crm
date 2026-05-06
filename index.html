@@ -1828,8 +1828,7 @@ function openGoogleCalendar(){
 
 function setupCalendar(){
   const cur=getCalId();
-  const newId=prompt('Nhập Google Calendar ID của bạn:
-(Lấy từ Google Calendar → Settings → Integrate calendar → Calendar ID)',cur||'');
+  const newId=prompt('Nhập Google Calendar ID:\n(Google Calendar → Settings → Integrate calendar → Calendar ID)',cur||'');
   if(newId===null)return;
   if(!newId.trim()){
     if(confirm('Xóa kết nối Google Calendar?')){
