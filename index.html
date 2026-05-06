@@ -331,6 +331,27 @@ tr:hover td{background:#fafaf7}
 .av3{background:#dbeafe;color:#1e40af}.av4{background:#ede9fe;color:#5b21b6}
 .av5{background:#fef3c7;color:#92400e}
 
+
+/* ── ZALO COMPOSE ── */
+.zalo-modal-body{padding:16px 18px}
+.zalo-steps{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.zalo-step-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)}
+.zalo-step-num{width:20px;height:20px;border-radius:50%;background:#0068FF;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.zalo-step-item.done .zalo-step-num{background:#1a6b45}
+.zalo-template-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.zalo-tpl-btn{padding:5px 10px;border-radius:999px;font-size:11px;cursor:pointer;border:1px solid var(--bd);background:var(--paper3);color:var(--ink3);font-family:inherit;transition:all .15s}
+.zalo-tpl-btn:hover{border-color:#0068FF;color:#0068FF;background:#e8f0ff}
+.zalo-msg-box{width:100%;min-height:120px;padding:10px 12px;border:1px solid var(--bd);border-radius:var(--rs);font-size:13px;font-family:inherit;color:var(--ink);background:var(--paper2);resize:vertical;line-height:1.6}
+.zalo-msg-box:focus{outline:none;border-color:#0068FF;box-shadow:0 0 0 3px rgba(0,104,255,.1)}
+.zalo-char-count{font-size:11px;color:var(--ink4);text-align:right;margin-top:4px}
+.zalo-action-row{display:flex;gap:8px;margin-top:14px}
+.btn-zalo-copy{background:#0068FF;color:#fff;border:none;border-radius:var(--rs);padding:9px 18px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;display:flex;align-items:center;gap:6px;flex:1;justify-content:center;transition:background .15s}
+.btn-zalo-copy:hover{background:#0057d4}
+.btn-zalo-copy.copied{background:#1a6b45}
+.zalo-hint-box{background:#e8f0ff;border:1px solid #b3c9ff;border-radius:var(--rs);padding:10px 13px;font-size:12px;color:#0057d4;margin-top:10px;line-height:1.6;display:flex;gap:8px}
+.zalo-phone-preview{background:var(--paper3);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:var(--ink3);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.zalo-phone-num{font-weight:600;color:var(--ink);font-size:14px}
+
 /* ── DIAGNOSTIC ── */
 .diag-overlay{position:fixed;inset:0;background:rgba(14,26,20,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px}
 .diag-box{background:var(--paper2);border-radius:var(--r);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:var(--sh3)}
@@ -808,6 +829,68 @@ tr:hover td{background:#fafaf7}
 </div>
 
 
+
+<!-- ── MODAL: ZALO COMPOSE ── -->
+<div class="overlay" id="modal-zalo" style="display:none" onclick="if(event.target===this)closeModal('modal-zalo')">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-hd">
+      <div>
+        <div class="modal-title" style="display:flex;align-items:center;gap:8px">
+          <span style="background:#0068FF;color:#fff;border-radius:6px;padding:2px 8px;font-size:13px">Z</span>
+          Gửi tin nhắn Zalo
+        </div>
+        <div class="modal-sub" id="zalo-modal-sub">Soạn tin nhắn → Copy → Paste vào Zalo</div>
+      </div>
+      <button class="modal-x" onclick="closeModal('modal-zalo')">×</button>
+    </div>
+    <div class="zalo-modal-body">
+
+      <!-- Phone preview -->
+      <div class="zalo-phone-preview">
+        <div>
+          <div style="font-size:11px;color:var(--ink4);margin-bottom:2px">Gửi đến</div>
+          <div class="zalo-phone-num" id="zalo-phone-display">—</div>
+        </div>
+        <a id="zalo-open-btn" href="#" target="_blank" class="btn-zalo-copy" style="flex:0;padding:7px 14px;font-size:12px">
+          💬 Mở Zalo
+        </a>
+      </div>
+
+      <!-- Template quick-select -->
+      <div style="font-size:11px;font-weight:600;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Mẫu tin nhắn nhanh</div>
+      <div class="zalo-template-btns">
+        <button class="zalo-tpl-btn" onclick="applyZaloTemplate('chao')">👋 Chào hỏi</button>
+        <button class="zalo-tpl-btn" onclick="applyZaloTemplate('gioi_thieu')">🏠 Giới thiệu dự án</button>
+        <button class="zalo-tpl-btn" onclick="applyZaloTemplate('follow')">📅 Follow-up</button>
+        <button class="zalo-tpl-btn" onclick="applyZaloTemplate('gia')">💰 Báo giá</button>
+        <button class="zalo-tpl-btn" onclick="applyZaloTemplate('lich_hen')">🗓️ Đặt lịch xem</button>
+      </div>
+
+      <!-- Message textarea -->
+      <textarea class="zalo-msg-box" id="zalo-msg-input" placeholder="Soạn tin nhắn..." oninput="updateZaloCharCount()"></textarea>
+      <div class="zalo-char-count"><span id="zalo-char-count">0</span> ký tự</div>
+
+      <!-- Actions -->
+      <div class="zalo-action-row">
+        <button class="btn-zalo-copy" id="zalo-copy-btn" onclick="copyAndOpenZalo()">
+          📋 Copy tin nhắn & Mở Zalo
+        </button>
+      </div>
+
+      <!-- Instruction -->
+      <div class="zalo-hint-box">
+        <div style="font-size:18px;flex-shrink:0">💡</div>
+        <div>
+          <b>Cách gửi:</b> Bấm nút trên → Tin nhắn tự copy vào clipboard → Zalo mở ra →
+          Bấm vào khung chat → <b>Cmd+V (Mac) / Ctrl+V (Win)</b> để paste → Gửi
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL: COMMISSION ── -->
 <div class="overlay" id="modal-comm" style="display:none" onclick="if(event.target===this)closeModal('modal-comm')">
   <div class="modal">
@@ -1053,7 +1136,7 @@ function renderClients(){
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
           <div class="score-ring ${scoreCls(calcScore(c))} " style="width:26px;height:26px;font-size:10px">${calcScore(c)}</div>
           <div class="score-bar-mini" style="flex:1"><div class="score-bar-fill" style="width:${calcScore(c)}%;background:${calcScore(c)>=70?'#1a6b45':calcScore(c)>=40?'#c97c1a':'#1a4a8a'}"></div></div>
-          ${c.phone?`<a href="${zaloUrl(c)}" target="_blank" class="zalo-btn" style="font-size:11px;padding:4px 9px;text-decoration:none">💬 Zalo</a>`:''}
+          ${c.phone?`<button onclick="event.stopPropagation();openZaloCompose(${c.id})" class="zalo-btn" style="font-size:11px;padding:4px 9px;border:none;cursor:pointer">💬 Zalo</button>`:''}
         </div>
       </div>`).join(''):'<div class="empty"><div class="empty-icon">🔍</div><div>Không tìm thấy</div></div>';
   } else {
@@ -1067,7 +1150,7 @@ function renderClients(){
         <td>${followBadge(c.followup)||'<span style="color:var(--ink4);font-size:11px">—</span>'}</td>
         <td>
           <button class="btn btn-o btn-sm" onclick="openDetail(${c.id})" style="font-size:11px">📝${(c.notes||[]).length?'<span class="dot-note"></span>':''}</button>
-          ${c.phone?`<a href="${zaloUrl(c)}" target="_blank" class="btn btn-o btn-sm" style="font-size:11px;margin-left:3px;text-decoration:none;background:#0068FF;color:#fff;border-color:#0068FF">💬</a>`:''}
+          ${c.phone?`<button onclick="openZaloCompose(${c.id})" class="btn btn-sm" style="font-size:11px;margin-left:3px;background:#0068FF;color:#fff;border:none;cursor:pointer;border-radius:var(--rs);padding:5px 8px">💬</button>`:''}
           <button class="btn btn-o btn-sm" onclick="editClient(${c.id})" style="font-size:11px;margin-left:3px">✏️</button>
           <button class="btn-del btn-sm" onclick="delClient(${c.id})" style="margin-left:3px">🗑️</button>
         </td>
@@ -1701,21 +1784,177 @@ function scoreHtml(c){
 }
 
 // ══════════════════════════════════════════
-//  ZALO INTEGRATION
+//  ZALO COMPOSE MODAL
 // ══════════════════════════════════════════
+let _zaloClient=null;
+
+// Message templates with dynamic variables
+const ZALO_TEMPLATES={
+  chao:(c)=>
+`Xin chào anh/chị ${c.name||''}! 😊
+
+Em là [Tên của bạn] - tư vấn bất động sản dự án ${c.project||'[Dự án]'}.
+
+Anh/chị có tiện không ạ? Em muốn chia sẻ một vài thông tin về dự án mà em nghĩ sẽ phù hợp với anh/chị.
+
+Trân trọng! 🙏`,
+
+  gioi_thieu:(c)=>
+`Xin chào anh/chị ${c.name||''}! 🏠
+
+Em đang tư vấn dự án ${c.project||'[Dự án]'} — một trong những dự án nổi bật hiện tại với:
+✅ Vị trí đắc địa
+✅ Pháp lý đầy đủ  
+✅ Chủ đầu tư uy tín
+✅ Giá hấp dẫn${c.budget?' (phù hợp ngân sách '+c.budget+')':''}
+
+Anh/chị có muốn em gửi thêm thông tin chi tiết không ạ?`,
+
+  follow:(c)=>
+`Xin chào anh/chị ${c.name||''}! 👋
+
+Em [Tên của bạn] xin phép liên hệ lại ạ.
+
+Trước đây mình có trao đổi về dự án ${c.project||'[Dự án]'}. Không biết anh/chị đã cân nhắc thêm chưa ạ? Hiện tại dự án vẫn còn một số căn đẹp phù hợp với nhu cầu của mình.
+
+Anh/chị có thời gian để em tư vấn thêm không ạ? 😊`,
+
+  gia:(c)=>
+`Xin chào anh/chị ${c.name||''}!
+
+Theo yêu cầu của anh/chị, em gửi thông tin bảng giá dự án ${c.project||'[Dự án]'} ạ:
+
+💰 Ngân sách tham khảo: ${c.budget||'[Liên hệ để biết giá]'}
+📐 Các loại căn: [1PN / 2PN / 3PN]
+🏢 Tầng đẹp còn hàng: [Tầng cao view thoáng]
+
+Anh/chị muốn xem thêm căn cụ thể nào không ạ? Em sẽ gửi thông tin chi tiết và ảnh thực tế ạ.`,
+
+  lich_hen:(c)=>
+`Xin chào anh/chị ${c.name||''}! 🗓️
+
+Em muốn mời anh/chị tham quan thực tế dự án ${c.project||'[Dự án]'} để có cái nhìn trực quan nhất ạ.
+
+📍 Địa điểm: [Địa chỉ dự án]
+🕐 Thời gian đề xuất: [Ngày/Giờ]
+
+Anh/chị có thể sắp xếp thời gian không ạ? Em sẽ đón và hướng dẫn tham quan ạ. 🚗`
+};
+
+function openZaloCompose(clientId){
+  const c=allClients.find(x=>x.id===clientId)||_zaloClient;
+  if(!c){toast('Không tìm thấy khách hàng!');return}
+  _zaloClient=c;
+
+  // Update modal header
+  document.getElementById('zalo-modal-sub').textContent=
+    (c.project||'')+(c.phone?' · '+c.phone:'');
+
+  // Phone display
+  const phone=(c.phone||'').replace(/\s/g,'');
+  document.getElementById('zalo-phone-display').textContent=
+    c.phone?c.phone:'Chưa có số điện thoại';
+
+  // Open button href
+  const openBtn=document.getElementById('zalo-open-btn');
+  if(phone){
+    openBtn.href='https://zalo.me/'+phone;
+    openBtn.style.opacity='1';
+    openBtn.style.pointerEvents='auto';
+  } else {
+    openBtn.href='https://chat.zalo.me';
+    openBtn.style.opacity='.5';
+  }
+
+  // Default template = greeting
+  applyZaloTemplate('chao');
+  resetZaloCopyBtn();
+  document.getElementById('modal-zalo').style.display='flex';
+  setTimeout(()=>document.getElementById('zalo-msg-input').focus(),300);
+}
+
+function applyZaloTemplate(key){
+  const c=_zaloClient||{};
+  const tpl=ZALO_TEMPLATES[key];
+  if(!tpl)return;
+  document.getElementById('zalo-msg-input').value=tpl(c);
+  updateZaloCharCount();
+  resetZaloCopyBtn();
+  // Highlight active template button
+  document.querySelectorAll('.zalo-tpl-btn').forEach(b=>{
+    b.style.background='';b.style.borderColor='';b.style.color='';
+  });
+  event?.target?.style && (event.target.style.background='#e8f0ff',
+    event.target.style.borderColor='#0068FF',event.target.style.color='#0068FF');
+}
+
+function updateZaloCharCount(){
+  const len=(document.getElementById('zalo-msg-input')?.value||'').length;
+  document.getElementById('zalo-char-count').textContent=len;
+}
+
+function resetZaloCopyBtn(){
+  const btn=document.getElementById('zalo-copy-btn');
+  if(btn){btn.classList.remove('copied');btn.innerHTML='📋 Copy tin nhắn & Mở Zalo';}
+}
+
+async function copyAndOpenZalo(){
+  const msg=(document.getElementById('zalo-msg-input')?.value||'').trim();
+  if(!msg){toast('Soạn tin nhắn trước!');return}
+
+  const c=_zaloClient;
+  const phone=(c?.phone||'').replace(/\s/g,'');
+  const zaloUrl='https://zalo.me/'+(phone||'');
+
+  // 1. Copy message to clipboard
+  let copied=false;
+  try{
+    await navigator.clipboard.writeText(msg);
+    copied=true;
+  }catch(e){
+    // Fallback for older browsers
+    const ta=document.createElement('textarea');
+    ta.value=msg;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    copied=document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  if(copied){
+    // Update button to show success
+    const btn=document.getElementById('zalo-copy-btn');
+    btn.classList.add('copied');
+    btn.innerHTML='✅ Đã copy! Mở Zalo và paste nhé...';
+
+    toast('✅ Đã copy tin nhắn! Mở Zalo và bấm Ctrl+V / Cmd+V');
+
+    // 2. Open Zalo after short delay
+    setTimeout(()=>{
+      window.open(zaloUrl,'_blank');
+    },600);
+
+    // 3. Reset button after 4s
+    setTimeout(()=>resetZaloCopyBtn(),4000);
+  } else {
+    toast('❌ Không copy được - hãy chọn text và copy thủ công');
+    window.open(zaloUrl,'_blank');
+  }
+}
+
+// ── Old simple zaloUrl helper (keep for table button) ──────────────────────
 function zaloUrl(c){
   const phone=(c.phone||'').replace(/[^0-9]/g,'');
   return 'https://zalo.me/'+phone;
 }
 function openZalo(c){
-  if(!c.phone){toast('Khách chưa có số điện thoại!');return}
-  window.open(zaloUrl(c),'_blank');
+  if(!c||!c.phone){toast('Khách chưa có số điện thoại!');return}
+  openZaloCompose(c.id);
 }
 function renderContactBtns(c){
   const el=document.getElementById('d-contact-btns-wrap');if(!el)return;
   const btns=[];
   if(c.phone)btns.push(`<a href="tel:${esc(c.phone)}" class="btn btn-o btn-sm" style="text-decoration:none">📞 Gọi điện</a>`);
-  if(c.phone)btns.push(`<a href="${esc(zaloUrl(c))}" target="_blank" class="zalo-btn" style="font-size:12px;padding:5px 10px;border-radius:var(--rs)">💬 Nhắn Zalo</a>`);
+  if(c.phone)btns.push(`<button onclick="openZaloCompose(${c.id})" class="zalo-btn" style="font-size:12px;padding:5px 12px;border-radius:var(--rs);border:none;cursor:pointer">💬 Nhắn Zalo</button>`);
   if(c.email)btns.push(`<a href="mailto:${esc(c.email)}" class="btn btn-o btn-sm" style="text-decoration:none">✉️ Email</a>`);
   el.innerHTML=btns.length?`<div class="msec-title">Liên hệ nhanh</div><div style="display:flex;gap:7px;flex-wrap:wrap">${btns.join('')}</div>`:'';
 }
