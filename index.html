@@ -506,22 +506,21 @@ tr:hover td{background:#fafaf7}
   </div>
 
 
-  <!-- ── TAB: CALENDAR ── -->
-  <div id="tab-calendar" class="tc" style="display:none">
+  <!-- ── TAB: CALENDAR (Google Calendar Embed) ── -->
+  <div id="tab-calendar" class="tc" style="display:none;flex-direction:column">
     <div class="content-hd">
-      <div class="content-title" id="cal-title">Lịch hẹn tổng hợp</div>
-      <div style="display:flex;gap:6px">
-        <button class="cal-nav-btn" onclick="calMove(-1)">‹</button>
-        <button class="btn btn-o btn-sm" onclick="calToday()">Hôm nay</button>
-        <button class="cal-nav-btn" onclick="calMove(1)">›</button>
+      <div class="content-title">Lịch tổng hợp</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select id="cal-mode" onchange="updateCalMode(this.value)" style="padding:5px 10px;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;background:var(--paper2);color:var(--ink);font-family:inherit">
+          <option value="MONTH">Tháng</option>
+          <option value="WEEK">Tuần</option>
+          <option value="AGENDA">Danh sách</option>
+        </select>
+        <button class="btn btn-o btn-sm" onclick="openGoogleCalendar()" title="Mở Google Calendar">🔗 Mở rộng</button>
+        <button class="btn btn-o btn-sm" onclick="setupCalendar()" title="Cài đặt">⚙️</button>
       </div>
     </div>
-    <div class="content-body">
-      <div class="cal-wrap">
-        <div class="cal-grid" id="cal-dow-row"></div>
-        <div class="cal-grid" id="cal-grid" style="margin-top:4px"></div>
-      </div>
-    </div>
+    <div id="cal-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
   </div>
 
   <!-- ── TAB: DASHBOARD ── -->
@@ -1682,54 +1681,126 @@ function renderContactBtns(c){
 }
 
 // ══════════════════════════════════════════
-//  CALENDAR VIEW
+//  GOOGLE CALENDAR EMBED
 // ══════════════════════════════════════════
-let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
-const MONS_VN=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const DOWS=['CN','T2','T3','T4','T5','T6','T7'];
+// URL embed format:
+// https://calendar.google.com/calendar/embed?src=CAL_ID&ctz=Asia/Ho_Chi_Minh&mode=MONTH&...
+// CAL_ID = email hoặc ID lịch Google (lấy từ Settings → Integrate calendar)
 
-function calToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();renderCalendar()}
-function calMove(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++}else if(calMonth<0){calMonth=11;calYear--}renderCalendar()}
+let gcalMode='MONTH';
+const GCAL_KEY='bds_gcal_id';
+
+function getCalId(){return localStorage.getItem(GCAL_KEY)||''}
+
+function buildGcalUrl(calId,mode){
+  const base='https://calendar.google.com/calendar/embed';
+  const params=new URLSearchParams({
+    src:calId,
+    ctz:'Asia/Ho_Chi_Minh',
+    mode:mode||gcalMode,
+    showTitle:'0',
+    showNav:'1',
+    showDate:'1',
+    showPrint:'0',
+    showTabs:'1',
+    showCalendars:'0',
+    showTz:'0',
+    wkst:'2',
+    hl:'vi',
+  });
+  return base+'?'+params.toString();
+}
 
 function renderCalendar(){
-  document.getElementById('cal-title').textContent=MONS_VN[calMonth]+' '+calYear;
-  // DOW header
-  document.getElementById('cal-dow-row').innerHTML=DOWS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-  // Build appt map by date string
-  const apptMap={};
-  allClients.forEach(c=>(c.appts||[]).forEach(a=>{
-    const dk=a.dt?a.dt.slice(0,10):'';
-    if(dk)(apptMap[dk]=apptMap[dk]||[]).push({...a,client:c});
-  }));
-  const today=new Date();today.setHours(0,0,0,0);
-  const firstDay=new Date(calYear,calMonth,1).getDay(); // 0=Sun
-  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-  const daysInPrev=new Date(calYear,calMonth,0).getDate();
-  let cells='';
-  // prev month padding
-  for(let i=firstDay-1;i>=0;i--){
-    cells+=`<div class="cal-day other-month"><div class="cal-day-num">${daysInPrev-i}</div></div>`;
+  const calId=getCalId();
+  const container=document.getElementById('cal-content');
+  if(!container)return;
+
+  if(!calId){
+    // Show setup screen
+    container.innerHTML=`
+      <div class="gcal-setup">
+        <div class="gcal-setup-icon">📅</div>
+        <div class="gcal-setup-title">Kết nối Google Calendar của bạn</div>
+        <div class="gcal-setup-desc">
+          Dán Calendar ID vào đây để hiển thị toàn bộ lịch Google của bạn ngay trong app.
+          Các lịch hẹn bạn tạo từ CRM sẽ tự động đồng bộ vào đây.
+        </div>
+        <div class="gcal-step">
+          <b>Bước 1:</b> Vào <a href="https://calendar.google.com" target="_blank" style="color:var(--green)">calendar.google.com</a>
+        </div>
+        <div class="gcal-step">
+          <b>Bước 2:</b> Bấm vào ⚙️ (Settings) → <b>Settings</b>
+        </div>
+        <div class="gcal-step">
+          <b>Bước 3:</b> Chọn lịch của bạn ở sidebar trái → kéo xuống phần <b>"Integrate calendar"</b>
+        </div>
+        <div class="gcal-step">
+          <b>Bước 4:</b> Copy <b>"Calendar ID"</b> (dạng email@gmail.com hoặc chuỗi dài)
+        </div>
+        <div class="gcal-step" style="background:var(--green-l);border-left:3px solid var(--green);border-radius:0 var(--rs) var(--rs) 0">
+          <b>💡 Lưu ý:</b> Vào <b>Access permissions</b> → tick <b>"Make available to public"</b> để lịch hiển thị được
+        </div>
+        <div class="gcal-input-row">
+          <input class="fi" id="gcal-id-input" placeholder="vd: ten@gmail.com hoặc abc123@group.calendar.google.com" style="flex:1"/>
+          <button class="btn btn-g" onclick="saveCalId()">Kết nối</button>
+        </div>
+      </div>`;
+    return;
   }
-  // current month
-  for(let d=1;d<=daysInMonth;d++){
-    const dk=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dt=new Date(calYear,calMonth,d);dt.setHours(0,0,0,0);
-    const isToday=dt.getTime()===today.getTime();
-    const appts=apptMap[dk]||[];
-    const dots=appts.slice(0,3).map(a=>{
-      const cl=a.client.status==='Hot'?'hot':a.client.status==='Warm'?'warm':'';
-      return `<div class="cal-dot ${cl}" onclick="event.stopPropagation();openDetail(${a.client.id})" title="${esc(a.title)} – ${esc(a.client.name)}">${esc(a.title.slice(0,12))}</div>`;
-    }).join('');
-    const moreDot=appts.length>3?`<div style="font-size:9px;color:var(--ink4)">+${appts.length-3} nữa</div>`:'';
-    cells+=`<div class="cal-day ${isToday?'today':''}">
-      <div class="cal-day-num">${d}${appts.length?`<span style="font-size:9px;color:var(--green);margin-left:3px">●</span>`:''}</div>
-      ${dots}${moreDot}
-    </div>`;
+
+  // Show Google Calendar iframe
+  const frameUrl=buildGcalUrl(calId,gcalMode);
+  container.innerHTML=`
+    <iframe
+      class="gcal-frame"
+      src="${frameUrl}"
+      style="flex:1;width:100%;border:none;min-height:500px"
+      frameborder="0"
+      scrolling="no"
+      allowfullscreen
+      title="Google Calendar"></iframe>`;
+}
+
+function saveCalId(){
+  const val=(document.getElementById('gcal-id-input')?.value||'').trim();
+  if(!val){toast('Nhập Calendar ID!');return}
+  localStorage.setItem(GCAL_KEY,val);
+  toast('Đã kết nối Google Calendar! 📅');
+  renderCalendar();
+}
+
+function updateCalMode(mode){
+  gcalMode=mode;
+  const calId=getCalId();
+  if(!calId)return;
+  const frame=document.querySelector('.gcal-frame');
+  if(frame)frame.src=buildGcalUrl(calId,mode);
+}
+
+function openGoogleCalendar(){
+  const calId=getCalId();
+  const url=calId
+    ?`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calId)}`
+    :'https://calendar.google.com';
+  window.open(url,'_blank');
+}
+
+function setupCalendar(){
+  const cur=getCalId();
+  const newId=prompt('Nhập Google Calendar ID của bạn:
+(Lấy từ Google Calendar → Settings → Integrate calendar → Calendar ID)',cur||'');
+  if(newId===null)return;
+  if(!newId.trim()){
+    if(confirm('Xóa kết nối Google Calendar?')){
+      localStorage.removeItem(GCAL_KEY);
+      renderCalendar();
+    }
+    return;
   }
-  // next month padding to fill 6 rows
-  const total=firstDay+daysInMonth;const remainder=(7-total%7)%7;
-  for(let d=1;d<=remainder;d++){cells+=`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;}
-  document.getElementById('cal-grid').innerHTML=cells;
+  localStorage.setItem(GCAL_KEY,newId.trim());
+  toast('Đã cập nhật Calendar ID!');
+  renderCalendar();
 }
 
 // ══════════════════════════════════════════
