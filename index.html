@@ -330,6 +330,24 @@ tr:hover td{background:#fafaf7}
 .av1{background:#fee2e2;color:#991b1b}.av2{background:#dcfce7;color:#166534}
 .av3{background:#dbeafe;color:#1e40af}.av4{background:#ede9fe;color:#5b21b6}
 .av5{background:#fef3c7;color:#92400e}
+
+/* ── DIAGNOSTIC ── */
+.diag-overlay{position:fixed;inset:0;background:rgba(14,26,20,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px}
+.diag-box{background:var(--paper2);border-radius:var(--r);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:var(--sh3)}
+.diag-hd{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--paper2)}
+.diag-title{font-size:15px;font-weight:700;font-family:'Lora',serif}
+.diag-body{padding:16px 18px}
+.diag-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);margin-bottom:7px;border:1px solid var(--bd);font-size:13px}
+.diag-row.ok{background:#e6f4ec;border-color:#7ec49a}
+.diag-row.err{background:var(--red-l);border-color:#f5c6c3}
+.diag-row.checking{background:var(--amber-l);border-color:#f5c6c3;animation:pulse-bg 1s infinite}
+@keyframes pulse-bg{0%,100%{opacity:1}50%{opacity:.7}}
+.diag-icon{font-size:18px;flex-shrink:0}
+.diag-label{flex:1;font-weight:500}
+.diag-msg{font-size:11px;color:var(--ink3)}
+.diag-detail{font-size:11px;color:var(--red);margin-top:3px;font-family:monospace;word-break:break-all}
+.sql-block{background:var(--ink);color:#a8ff9a;border-radius:var(--rs);padding:12px 14px;font-size:11px;font-family:monospace;margin:8px 0;overflow-x:auto;white-space:pre;line-height:1.6}
+
 .follow-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600}
 .follow-today{background:#fef3c7;color:#92400e}
 .follow-overdue{background:var(--red-l);color:var(--red)}
@@ -347,6 +365,7 @@ tr:hover td{background:#fafaf7}
   <div style="display:flex;gap:5px">
     <button class="icon-btn cart-icon" onclick="openCart()" title="Giỏ hàng">🛒<span class="cart-count" id="cart-badge" style="display:none">0</span></button>
     <button class="icon-btn" onclick="forceSync()" title="Đồng bộ">🔄</button>
+    <button class="icon-btn" onclick="runDiagnostics()" title="Kiểm tra kết nối" id="diag-btn">🔧</button>
     <button class="icon-btn" onclick="exportExcel()" title="Xuất Excel">💾</button>
   </div>
 </div>
@@ -825,6 +844,27 @@ tr:hover td{background:#fafaf7}
         <input class="fi" id="cm-note" placeholder="Tên căn, tầng, block..."/>
       </div>
       <button class="btn btn-g" style="width:100%;justify-content:center" onclick="saveCommission()">💰 Lưu hoa hồng</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── DIAGNOSTIC MODAL ── -->
+<div class="diag-overlay" id="diag-overlay" style="display:none">
+  <div class="diag-box">
+    <div class="diag-hd">
+      <div class="diag-title">🔧 Kiểm tra kết nối Supabase</div>
+      <button class="modal-x" onclick="document.getElementById('diag-overlay').style.display='none'">×</button>
+    </div>
+    <div class="diag-body">
+      <div id="diag-results"></div>
+      <div id="diag-fix" style="display:none;margin-top:12px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--red)">🔴 Cần chạy SQL này trong Supabase:</div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">Dashboard → SQL Editor → New Query → paste → Run</div>
+        <div id="diag-sql-block" class="sql-block"></div>
+        <button class="btn btn-g" style="width:100%;justify-content:center;margin-top:10px" onclick="copySql()">📋 Copy SQL</button>
+        <a href="https://supabase.com/dashboard" target="_blank" class="btn btn-o" style="width:100%;justify-content:center;margin-top:7px;text-decoration:none">🔗 Mở Supabase Dashboard</a>
+      </div>
     </div>
   </div>
 </div>
@@ -2057,8 +2097,187 @@ function exportCommissions(){
   toast('Đã xuất báo cáo hoa hồng!');
 }
 
+// ══════════════════════════════════════════
+//  DIAGNOSTICS — Kiểm tra kết nối Supabase
+// ══════════════════════════════════════════
+const SETUP_SQL = `-- Chạy trong Supabase → SQL Editor → New Query
+
+-- 1. Tạo bảng projects
+CREATE TABLE IF NOT EXISTS projects (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 2. Tạo bảng clients
+CREATE TABLE IF NOT EXISTS clients (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT, email TEXT, budget TEXT,
+  project TEXT, status TEXT DEFAULT 'Cold',
+  source TEXT, followup DATE,
+  notes JSONB DEFAULT '[]',
+  appts JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 3. Tạo bảng units
+CREATE TABLE IF NOT EXISTS units (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL, project TEXT,
+  price TEXT, area TEXT, type TEXT,
+  status TEXT DEFAULT 'available',
+  note TEXT, images JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 4. Tạo bảng docs
+CREATE TABLE IF NOT EXISTS docs (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL, url TEXT NOT NULL,
+  type TEXT DEFAULT 'link',
+  project TEXT, description TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 5. Bật RLS & cho phép truy cập
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE units    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE docs     ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all_projects" ON projects FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all_clients"  ON clients  FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all_units"    ON units    FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all_docs"     ON docs     FOR ALL USING (true) WITH CHECK (true);
+
+-- 6. Storage bucket cho ảnh
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('property-images', 'property-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "allow_images" ON storage.objects
+  FOR ALL USING (bucket_id = 'property-images') WITH CHECK (bucket_id = 'property-images');`;
+
+async function runDiagnostics(){
+  const overlay=document.getElementById('diag-overlay');
+  const results=document.getElementById('diag-results');
+  const fixDiv=document.getElementById('diag-fix');
+  overlay.style.display='flex';
+  fixDiv.style.display='none';
+
+  const checks=[
+    {id:'c1',label:'Kết nối Supabase URL',fn:async()=>{
+      const r=await fetch(SB+'/rest/v1/',{headers:{'apikey':KEY}});
+      if(!r.ok)throw new Error('HTTP '+r.status+' – Kiểm tra lại URL Supabase');
+      return 'Kết nối thành công';
+    }},
+    {id:'c2',label:'API Key hợp lệ',fn:async()=>{
+      const r=await fetch(SB+'/rest/v1/projects?limit=1',{headers:H});
+      if(r.status===401)throw new Error('API Key không hợp lệ hoặc đã hết hạn');
+      if(r.status===404)throw new Error('Bảng "projects" chưa tồn tại → Cần chạy SQL Setup');
+      if(r.status===403)throw new Error('RLS đang chặn – Cần tạo policy cho bảng projects');
+      if(!r.ok)throw new Error('HTTP '+r.status+': '+await r.text());
+      return 'Key hợp lệ';
+    }},
+    {id:'c3',label:'Bảng "projects" tồn tại & có quyền đọc',fn:async()=>{
+      const d=await sb('projects?select=id,name&limit=1');
+      return`OK · ${Array.isArray(d)?d.length+' dòng đầu tiên':'dữ liệu hợp lệ'}`;
+    }},
+    {id:'c4',label:'Bảng "clients" tồn tại & có quyền đọc',fn:async()=>{
+      const d=await sb('clients?select=id,name&limit=1');
+      return`OK · ${Array.isArray(d)?d.length+' dòng đầu tiên':'dữ liệu hợp lệ'}`;
+    }},
+    {id:'c5',label:'Bảng "units" tồn tại & có quyền đọc',fn:async()=>{
+      const d=await sb('units?select=id,name&limit=1');
+      return`OK · ${Array.isArray(d)?d.length+' dòng':'dữ liệu hợp lệ'}`;
+    }},
+    {id:'c6',label:'Bảng "docs" tồn tại & có quyền đọc',fn:async()=>{
+      const d=await sb('docs?select=id,name&limit=1');
+      return`OK · ${Array.isArray(d)?d.length+' dòng':'dữ liệu hợp lệ'}`;
+    }},
+    {id:'c7',label:'Quyền ghi (INSERT) vào clients',fn:async()=>{
+      const r=await fetch(SB+'/rest/v1/clients',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({name:'__TEST__',status:'Cold'})});
+      if(r.status===401||r.status===403)throw new Error('Không có quyền ghi – Thiếu INSERT policy');
+      if(!r.ok&&r.status!==201&&r.status!==200)throw new Error('HTTP '+r.status);
+      // cleanup test row
+      try{await fetch(SB+'/rest/v1/clients?name=eq.__TEST__',{method:'DELETE',headers:{...H,'Prefer':''}})}catch(e){}
+      return 'Có thể ghi dữ liệu';
+    }},
+  ];
+
+  let hasError=false;
+  results.innerHTML='';
+
+  for(const chk of checks){
+    // Show "checking" state
+    const row=document.createElement('div');
+    row.className='diag-row checking';
+    row.id=chk.id;
+    row.innerHTML=`<span class="diag-icon">⏳</span><div class="flex-1"><div class="diag-label">${chk.label}</div><div class="diag-msg">Đang kiểm tra...</div></div>`;
+    results.appendChild(row);
+
+    try{
+      const msg=await chk.fn();
+      row.className='diag-row ok';
+      row.innerHTML=`<span class="diag-icon">✅</span><div><div class="diag-label">${chk.label}</div><div class="diag-msg" style="color:#1a6b45">${msg}</div></div>`;
+    }catch(err){
+      hasError=true;
+      row.className='diag-row err';
+      row.innerHTML=`<span class="diag-icon">❌</span><div><div class="diag-label">${chk.label}</div><div class="diag-detail">${err.message}</div></div>`;
+    }
+  }
+
+  if(hasError){
+    fixDiv.style.display='block';
+    document.getElementById('diag-sql-block').textContent=SETUP_SQL;
+    results.insertAdjacentHTML('afterend','');
+  } else {
+    results.insertAdjacentHTML('beforeend','<div style="text-align:center;padding:14px;font-size:14px;color:#1a6b45;font-weight:600">🎉 Tất cả kết nối đều hoạt động tốt!</div>');
+  }
+}
+
+function copySql(){
+  navigator.clipboard.writeText(SETUP_SQL).then(()=>toast('Đã copy SQL! Paste vào Supabase SQL Editor 📋')).catch(()=>toast('Không copy được, hãy chọn text thủ công'));
+}
+
+// ══════════════════════════════════════════
+//  AUTO-DIAGNOSE on first load failure
+// ══════════════════════════════════════════
+async function initWithDiag(){
+  try{
+    applyResponsive();setSyncing();
+    // Load cache first
+    const cc=lc('clients');if(cc){allClients=cc;renderClients();renderSidebar()}
+    const cu=lc('units');if(cu)units=cu;
+    const cd=lc('docs');if(cd)docs=cd;
+    const cp=lc('projects');if(cp)projects=cp;
+    cart=lc('cart')||[];cartClient=lc('cartClient')||null;updateCartBadge();
+    // Try Supabase
+    const testR=await fetch(SB+'/rest/v1/projects?select=id&limit=1',{headers:H});
+    if(!testR.ok){
+      setSynced();
+      const errText=await testR.text();
+      // Show diagnostic automatically
+      setTimeout(()=>{
+        toast('⚠️ Lỗi kết nối Supabase – Bấm 🔧 để xem chi tiết');
+        document.getElementById('sdot').className='sync-dot off';
+        document.getElementById('slbl').textContent='Lỗi kết nối';
+      },500);
+      return;
+    }
+    await Promise.all([loadProjects(),loadClients(),loadUnits(),loadDocs()]);
+    setSynced();
+  }catch(e){
+    document.getElementById('sdot').className='sync-dot off';
+    document.getElementById('slbl').textContent='Lỗi kết nối';
+    setTimeout(()=>toast('⚠️ Không kết nối được Supabase – Bấm 🔧 để chẩn đoán'),500);
+  }
+}
+
 // START
-init();
+initWithDiag();
 </script>
 </body>
 </html>
