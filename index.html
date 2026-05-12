@@ -373,10 +373,75 @@ tr:hover td{background:#fafaf7}
 .follow-today{background:#fef3c7;color:#92400e}
 .follow-overdue{background:var(--red-l);color:var(--red)}
 .follow-ok{background:var(--green-l);color:var(--green-d)}
+
+/* ── LOCK SCREEN ── */
+#lock-screen{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.lock-card{background:var(--paper2);border-radius:20px;padding:32px 28px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center}
+.lock-logo{font-family:'Lora',serif;font-size:26px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.lock-logo em{font-style:italic;color:var(--gold)}
+.lock-sub{font-size:12px;color:var(--ink4);margin-bottom:28px}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bd2);background:transparent;transition:all .15s}
+.pin-dot.filled{background:var(--ink);border-color:var(--ink)}
+.pin-dot.error{background:var(--red);border-color:var(--red);animation:pin-shake .3s ease}
+.pin-dot.success{background:var(--green);border-color:var(--green)}
+@keyframes pin-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.pin-btn{height:56px;border-radius:12px;border:1px solid var(--bd);background:var(--paper3);font-size:20px;font-weight:500;cursor:pointer;font-family:'Lexend',sans-serif;color:var(--ink);transition:all .12s;user-select:none}
+.pin-btn:hover{background:var(--paper4);border-color:var(--bd2)}
+.pin-btn:active{transform:scale(.93);background:var(--ink);color:var(--paper)}
+.pin-btn.del{font-size:18px;background:none;border-color:transparent;color:var(--ink3)}
+.pin-btn.del:hover{background:var(--red-l);color:var(--red);border-color:transparent}
+.pin-btn.zero{grid-column:2}
+.lock-error{font-size:12px;color:var(--red);min-height:18px;margin-bottom:4px;font-weight:500}
+.lock-hint{font-size:11px;color:var(--ink4);margin-top:12px}
+.lock-hint a{color:var(--green);cursor:pointer;text-decoration:none}
+.pin-set-wrap{display:none;margin-top:10px}
+.pin-set-inp{width:100%;padding:10px 14px;border:1px solid var(--bd);border-radius:var(--rs);font-size:16px;text-align:center;letter-spacing:8px;background:var(--paper3);color:var(--ink);font-family:inherit;box-sizing:border-box}
+.pin-set-inp:focus{outline:none;border-color:var(--green)}
+.lock-attempts{font-size:11px;color:var(--ink4);margin-top:6px}
+.lock-locked{background:var(--red-l);border-radius:var(--rs);padding:10px;font-size:12px;color:var(--red);font-weight:500;margin-bottom:12px;display:none}
 </style>
 </head>
 <body>
-<div class="app">
+<div id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-logo">BDS <em>Pro</em></div>
+    <div class="lock-sub" id="lock-sub-txt">Nhập mã PIN để truy cập</div>
+    <div id="lock-locked" class="lock-locked">Quá nhiều lần sai. Vui lòng đợi <span id="lock-timer"></span></div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="lock-error" id="lock-error"></div>
+    <div class="pin-grid" id="pin-grid">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+      <button class="pin-btn del" onclick="pinDel()">&#x232B;</button>
+    </div>
+    <div class="lock-attempts" id="lock-attempts"></div>
+    <div class="lock-hint">Lần đầu? <a onclick="showSetPin()">Tạo PIN mới</a> &nbsp;·&nbsp; <a onclick="showResetPin()">Quên mã?</a></div>
+    <div class="pin-set-wrap" id="pin-set-wrap">
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:6px" id="pin-set-label">Tạo mã PIN 4 số:</div>
+      <input class="pin-set-inp" id="pin-set-inp" type="password" maxlength="4" inputmode="numeric" placeholder="····" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onkeydown="if(event.key==='Enter')confirmSetPin()"/>
+      <input class="pin-set-inp" id="pin-set-inp2" type="password" maxlength="4" inputmode="numeric" placeholder="Nhập lại ····" style="margin-top:8px" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onkeydown="if(event.key==='Enter')confirmSetPin()"/>
+      <button onclick="confirmSetPin()" style="width:100%;margin-top:10px;padding:10px;background:var(--green);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Xác nhận</button>
+      <button onclick="hideSetPin()" style="width:100%;margin-top:6px;padding:8px;background:none;border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;cursor:pointer;font-family:inherit;color:var(--ink3)">Hủy</button>
+    </div>
+  </div>
+  <div style="color:rgba(255,255,255,.2);font-size:11px;margin-top:20px">BDS Pro CRM · Bảo mật PIN</div>
+</div>
+<div class="app" id="main-app" style="display:none">
 
 <!-- Topbar -->
 <div class="topbar">
@@ -406,6 +471,8 @@ tr:hover td{background:#fafaf7}
   <div class="nav-item" id="ni-catalog" onclick="showTab('catalog')"><span class="ni-icon">🏠</span>Danh sách căn</div>
   <div class="nav-item" id="ni-docs" onclick="showTab('docs')"><span class="ni-icon">📁</span>Tài liệu dự án</div>
   <div class="nav-item" id="ni-import" onclick="showTab('import')"><span class="ni-icon">📤</span>Import Excel</div>
+  <div class="nav-sep"></div>
+  <div class="nav-item" id="ni-ai" onclick="showTab('ai')"><span class="ni-icon">🤖</span>AI Trợ lý<span class="notif-dot" id="ai-notif-dot" style="display:none"></span></div>
   <div class="nav-sep"></div>
   <div class="sb-lbl">Lọc theo dự án</div>
   <div id="proj-list"></div>
@@ -590,6 +657,59 @@ tr:hover td{background:#fafaf7}
     <div class="content-body" id="reports-body"></div>
   </div>
 
+
+  <!-- ── TAB: AI TRỢ LÝ ── -->
+  <div id="tab-ai" class="tc" style="display:none;flex-direction:column">
+    <div class="content-hd">
+      <div class="content-title">🤖 AI Trợ lý BDS</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-o btn-sm" onclick="aiDailyReport()">📊 Báo cáo ngày</button>
+        <button class="btn btn-o btn-sm" onclick="clearAIChat()">🗑️ Xóa chat</button>
+      </div>
+    </div>
+    <!-- API Key bar -->
+    <div class="ai-settings-bar" id="api-key-bar">
+      <span style="white-space:nowrap;flex-shrink:0">🔑 Anthropic API Key:</span>
+      <input class="api-key-inp" id="api-key-inp" type="password" placeholder="sk-ant-..." autocomplete="off"/>
+      <button class="btn btn-g btn-sm" onclick="saveApiKey()">Lưu</button>
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn btn-o btn-sm">Lấy key</a>
+    </div>
+    <div class="ai-tab-wrap">
+      <!-- Quick action buttons -->
+      <div class="ai-quick-btns">
+        <button class="ai-quick-btn" onclick="aiQuick('Có bao nhiêu khách Hot hôm nay?')">🔥 Khách Hot</button>
+        <button class="ai-quick-btn" onclick="aiQuick('Lịch hẹn nào sắp tới trong tuần này?')">📅 Lịch hẹn</button>
+        <button class="ai-quick-btn" onclick="aiQuick('Ai là khách điểm cao nhất? Gợi ý tôi nên follow ai trước?')">⭐ Ưu tiên follow</button>
+        <button class="ai-quick-btn" onclick="aiQuick('Tổng kết tháng này: doanh số, khách mới, hoa hồng')">💰 Tổng kết tháng</button>
+        <button class="ai-quick-btn" onclick="aiQuick('Khách nào có follow-up quá hạn? Tôi cần xử lý gấp')">⚠️ Quá hạn</button>
+        <button class="ai-quick-btn" onclick="aiQuick('Gợi ý kịch bản chăm sóc khách Warm để chuyển sang Hot')">💡 Kịch bản chăm sóc</button>
+      </div>
+      <!-- Chat messages -->
+      <div class="ai-chat-body" id="ai-chat-body">
+        <div class="ai-msg bot">
+          <div class="ai-avatar">🤖</div>
+          <div class="ai-bubble">Xin chào! Tôi là AI Trợ lý BDS của bạn. Tôi có thể:
+
+📊 Phân tích dữ liệu khách hàng từ CRM
+💬 Soạn tin nhắn Zalo chăm sóc khách
+📅 Nhắc nhở lịch hẹn và follow-up
+🏠 Gợi ý căn hộ phù hợp với từng khách
+📈 Báo cáo hiệu suất bán hàng
+✍️ Tư vấn kịch bản chốt sale
+
+Hỏi tôi bất cứ điều gì về công việc của bạn!</div>
+        </div>
+      </div>
+      <!-- Input bar -->
+      <div class="ai-input-bar">
+        <textarea class="ai-input" id="ai-input" placeholder="Hỏi AI trợ lý... (Enter gửi, Shift+Enter xuống dòng)" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMsg()}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button class="ai-send" id="ai-send-btn" onclick="sendAIMsg()" title="Gửi">➤</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- .main -->
 </div><!-- .body -->
 
@@ -621,6 +741,15 @@ tr:hover td{background:#fafaf7}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="d-stage-btns"></div>
       </div>
       <div class="msec" id="d-contact-btns-wrap" style="margin-bottom:12px"></div>
+      <div class="msec" style="margin-bottom:12px">
+        <div class="msec-title">AI hỗ trợ</div>
+        <div class="ai-action-row">
+          <button class="btn-ai" onclick="openAIAnalyze(detailId)">🤖 AI phân tích</button>
+          <button class="btn-ai" onclick="openZaloDraft(detailId)">💬 Soạn tin Zalo</button>
+          <button class="btn-ai" onclick="aiMatchUnitsForClient(detailId)">🏠 Gợi ý căn</button>
+        </div>
+        <div id="detail-ai-units" class="ai-result-box" style="margin-top:8px;font-size:12px"></div>
+      </div>
       <div class="msec">
         <div class="msec-title">Đặt lịch hẹn mới</div>
         <div class="form-row">
@@ -952,9 +1081,335 @@ tr:hover td{background:#fafaf7}
   </div>
 </div>
 
+
+<!-- ── MODAL: SOẠN TIN ZALO AI ── -->
+<div class="overlay" id="modal-zalo-draft" style="display:none" onclick="if(event.target===this)closeModal('modal-zalo-draft')">
+  <div class="modal">
+    <div class="drag-handle"></div>
+    <div class="modal-hd">
+      <div class="modal-title">💬 Soạn tin Zalo với AI</div>
+      <button class="modal-x" onclick="closeModal('modal-zalo-draft')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="zd-client-info" style="background:var(--paper3);border-radius:var(--rs);padding:10px 13px;margin-bottom:12px;font-size:13px"></div>
+      <div class="fg">
+        <label class="fl">Mục đích tin nhắn</label>
+        <select class="fs" id="zd-purpose">
+          <option value="followup">Follow-up sau lần gặp</option>
+          <option value="remind">Nhắc lịch hẹn</option>
+          <option value="introduce">Giới thiệu dự án mới</option>
+          <option value="checkin">Hỏi thăm, chăm sóc</option>
+          <option value="priceupdate">Cập nhật giá / chính sách mới</option>
+          <option value="closingsoon">Sắp hết hàng, thúc đẩy quyết định</option>
+          <option value="custom">Tùy chỉnh...</option>
+        </select>
+      </div>
+      <div class="fg" id="zd-custom-wrap" style="display:none">
+        <label class="fl">Nội dung cần nhắn</label>
+        <input class="fi" id="zd-custom" placeholder="Mô tả nội dung bạn muốn nhắn..."/>
+      </div>
+      <div class="fg">
+        <label class="fl">Giọng điệu</label>
+        <select class="fs" id="zd-tone">
+          <option value="friendly">Thân thiện, gần gũi</option>
+          <option value="professional">Chuyên nghiệp</option>
+          <option value="urgent">Tạo cảm giác cấp bách</option>
+          <option value="caring">Quan tâm, chăm sóc</option>
+        </select>
+      </div>
+      <button class="btn-ai" style="width:100%;justify-content:center;padding:10px" onclick="generateZaloMsg()" id="zd-gen-btn">
+        🤖 AI soạn tin nhắn
+      </button>
+      <div id="zd-result" class="ai-result-box"></div>
+      <div id="zd-actions" style="display:none;margin-top:10px;display:none">
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-g btn-sm" onclick="copyZaloMsg()">📋 Copy tin nhắn</button>
+          <a id="zd-zalo-link" href="#" target="_blank" class="zalo-btn" style="font-size:12px;padding:5px 11px;text-decoration:none">💬 Mở Zalo</a>
+          <button class="btn btn-o btn-sm" onclick="regenerateZaloMsg()">🔄 Viết lại</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: AI PHÂN TÍCH KHÁCH ── -->
+<div class="overlay" id="modal-ai-analyze" style="display:none" onclick="if(event.target===this)closeModal('modal-ai-analyze')">
+  <div class="modal modal-lg">
+    <div class="drag-handle"></div>
+    <div class="modal-hd">
+      <div><div class="modal-title" id="aa-title">🤖 AI phân tích khách hàng</div><div class="modal-sub" id="aa-sub"></div></div>
+      <button class="modal-x" onclick="closeModal('modal-ai-analyze')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="aa-loading" style="text-align:center;padding:24px;color:var(--ink4)">
+        <div class="ai-typing" style="justify-content:center"><span></span><span></span><span></span></div>
+        <div style="font-size:13px;margin-top:8px">AI đang phân tích...</div>
+      </div>
+      <div id="aa-result" style="display:none">
+        <div id="aa-content" class="ai-result-box" style="display:block"></div>
+        <div class="ai-action-row" style="margin-top:12px">
+          <button class="btn-ai" onclick="openZaloDraft(currentAnalyzeId)">💬 Soạn tin Zalo</button>
+          <button class="btn-ai" onclick="aiMatchUnitsForClient(currentAnalyzeId)">🏠 Gợi ý căn phù hợp</button>
+          <button class="btn btn-o btn-sm" onclick="copyAIAnalysis()">📋 Copy</button>
+        </div>
+        <div id="aa-units-result" class="ai-result-box" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ══════════════════════════════════════════
+//  LOCK SCREEN — PIN AUTHENTICATION
+// ══════════════════════════════════════════
+const PIN_KEY='bds_pin_hash';
+const PIN_FAIL_KEY='bds_pin_fails';
+const PIN_LOCK_KEY='bds_pin_locked_until';
+const PIN_SESSION='bds_session';
+const MAX_ATTEMPTS=5;
+const LOCK_DURATION=5*60*1000; // 5 phút
+const SESSION_TTL=8*60*60*1000; // 8 giờ
+
+let pinBuffer='';
+let _pinMode='enter'; // enter | set | reset
+
+// Simple hash (not cryptographic, just obfuscation)
+function hashPin(pin){
+  let h=0;
+  for(let i=0;i<pin.length;i++){h=((h<<5)-h)+pin.charCodeAt(i);h|=0}
+  return h.toString(36)+'_'+pin.length;
+}
+
+function getStoredPin(){return localStorage.getItem(PIN_KEY)}
+function isLocked(){
+  const until=parseInt(localStorage.getItem(PIN_LOCK_KEY)||0);
+  return Date.now()<until;
+}
+function getLockRemaining(){
+  const until=parseInt(localStorage.getItem(PIN_LOCK_KEY)||0);
+  return Math.max(0,Math.ceil((until-Date.now())/1000));
+}
+function getFailCount(){return parseInt(localStorage.getItem(PIN_FAIL_KEY)||0)}
+function recordFail(){
+  const f=getFailCount()+1;
+  localStorage.setItem(PIN_FAIL_KEY,f);
+  if(f>=MAX_ATTEMPTS){
+    localStorage.setItem(PIN_LOCK_KEY,Date.now()+LOCK_DURATION);
+    localStorage.setItem(PIN_FAIL_KEY,0);
+  }
+  return f;
+}
+function clearFails(){localStorage.removeItem(PIN_FAIL_KEY);localStorage.removeItem(PIN_LOCK_KEY)}
+
+function hasSession(){
+  const s=localStorage.getItem(PIN_SESSION);
+  if(!s)return false;
+  const t=parseInt(s);
+  if(Date.now()-t>SESSION_TTL){localStorage.removeItem(PIN_SESSION);return false}
+  return true;
+}
+function startSession(){localStorage.setItem(PIN_SESSION,Date.now().toString())}
+function endSession(){localStorage.removeItem(PIN_SESSION)}
+
+function unlockApp(){
+  document.getElementById('lock-screen').style.display='none';
+  document.getElementById('main-app').style.display='flex';
+  startSession();
+  clearFails();
+  // Init CRM after unlock
+  if(typeof init==='function')init();
+  if(typeof initNotifications==='function')initNotifications();
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    if(!d)return;
+    d.className='pin-dot'+(pinBuffer.length>i?' filled':'');
+  }
+}
+
+function pinPress(n){
+  if(isLocked()){showLockTimer();return}
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=n;
+  updatePinDots();
+  document.getElementById('lock-error').textContent='';
+  if(pinBuffer.length===4){
+    setTimeout(()=>checkPin(),80);
+  }
+}
+
+function pinDel(){
+  if(pinBuffer.length>0){
+    pinBuffer=pinBuffer.slice(0,-1);
+    updatePinDots();
+    document.getElementById('lock-error').textContent='';
+  }
+}
+
+function checkPin(){
+  const stored=getStoredPin();
+  if(!stored){
+    // No PIN set yet — auto unlock (first time)
+    pinBuffer='';updatePinDots();
+    showSetPin();
+    return;
+  }
+  if(hashPin(pinBuffer)===stored){
+    // SUCCESS
+    for(let i=0;i<4;i++){
+      const d=document.getElementById('pd'+i);
+      if(d)d.className='pin-dot success';
+    }
+    setTimeout(unlockApp,300);
+  } else {
+    // FAIL
+    for(let i=0;i<4;i++){
+      const d=document.getElementById('pd'+i);
+      if(d)d.className='pin-dot error';
+    }
+    const fails=recordFail();
+    if(isLocked()){
+      document.getElementById('lock-error').textContent='';
+      showLockTimer();
+    } else {
+      const remaining=MAX_ATTEMPTS-fails;
+      document.getElementById('lock-error').textContent='Sai mã PIN! Còn '+(remaining>0?remaining:0)+' lần thử.';
+      document.getElementById('lock-attempts').textContent=fails>0?'Đã sai '+fails+' lần (khóa sau '+MAX_ATTEMPTS+' lần)':'';
+    }
+    pinBuffer='';
+    setTimeout(updatePinDots,300);
+  }
+}
+
+let _lockInterval=null;
+function showLockTimer(){
+  document.getElementById('lock-locked').style.display='block';
+  document.getElementById('pin-grid').style.opacity='0.3';
+  document.getElementById('pin-grid').style.pointerEvents='none';
+  function tick(){
+    const s=getLockRemaining();
+    if(s<=0){
+      document.getElementById('lock-locked').style.display='none';
+      document.getElementById('pin-grid').style.opacity='1';
+      document.getElementById('pin-grid').style.pointerEvents='';
+      document.getElementById('lock-error').textContent='';
+      clearInterval(_lockInterval);
+      return;
+    }
+    const m=Math.floor(s/60);const sec=s%60;
+    document.getElementById('lock-timer').textContent=(m>0?m+'m ':'')+sec+'s';
+  }
+  tick();
+  _lockInterval=setInterval(tick,1000);
+}
+
+function showSetPin(){
+  _pinMode='set';
+  document.getElementById('pin-set-label').textContent='Tạo mã PIN 4 số mới:';
+  document.getElementById('pin-set-inp').value='';
+  document.getElementById('pin-set-inp2').value='';
+  document.getElementById('pin-set-wrap').style.display='block';
+  document.getElementById('pin-set-inp').focus();
+  document.getElementById('lock-error').textContent='';
+  pinBuffer='';updatePinDots();
+}
+
+function showResetPin(){
+  const ans=prompt('Nhập mật khẩu khôi phục (liên hệ admin):');
+  if(ans==='bdsreset2025'){
+    localStorage.removeItem(PIN_KEY);
+    localStorage.removeItem(PIN_FAIL_KEY);
+    localStorage.removeItem(PIN_LOCK_KEY);
+    showSetPin();
+    document.getElementById('pin-set-label').textContent='Tạo mã PIN mới sau khi reset:';
+  } else if(ans!==null){
+    document.getElementById('lock-error').textContent='Mật khẩu khôi phục không đúng!';
+  }
+}
+
+function hideSetPin(){
+  document.getElementById('pin-set-wrap').style.display='none';
+  _pinMode='enter';
+  // If no PIN set yet and user cancels, auto unlock (dev mode)
+  if(!getStoredPin()){unlockApp()}
+}
+
+function confirmSetPin(){
+  const p1=document.getElementById('pin-set-inp').value.trim();
+  const p2=document.getElementById('pin-set-inp2').value.trim();
+  if(p1.length<4){document.getElementById('lock-error').textContent='PIN phải đủ 4 số!';return}
+  if(p1!==p2){document.getElementById('lock-error').textContent='Hai mã PIN không khớp!';return}
+  if(/^(.)\1+$/.test(p1)){document.getElementById('lock-error').textContent='PIN quá đơn giản! Chọn số khác nhau.';return}
+  localStorage.setItem(PIN_KEY,hashPin(p1));
+  document.getElementById('pin-set-wrap').style.display='none';
+  document.getElementById('lock-error').textContent='';
+  // Show success then unlock
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    if(d)d.className='pin-dot success';
+  }
+  document.querySelector('.lock-sub').textContent='PIN đã tạo thành công! 🎉';
+  setTimeout(unlockApp,600);
+}
+
+// Keyboard support
+document.addEventListener('keydown',function(e){
+  const ls=document.getElementById('lock-screen');
+  if(!ls||ls.style.display==='none')return;
+  if(_pinMode!=='enter')return;
+  if(e.key>='0'&&e.key<='9')pinPress(e.key);
+  else if(e.key==='Backspace'||e.key==='Delete')pinDel();
+});
+
+// Add logout button to topbar
+function addLogoutBtn(){
+  const topbar=document.querySelector('.topbar');
+  if(!topbar||document.getElementById('logout-btn'))return;
+  const btn=document.createElement('button');
+  btn.id='logout-btn';
+  btn.className='icon-btn';
+  btn.title='Đăng xuất';
+  btn.innerHTML='🔒';
+  btn.onclick=function(){
+    if(confirm('Khoá màn hình?')){
+      endSession();
+      pinBuffer='';
+      updatePinDots();
+      document.getElementById('main-app').style.display='none';
+      document.getElementById('lock-screen').style.display='flex';
+      document.getElementById('lock-error').textContent='';
+      document.getElementById('lock-attempts').textContent='';
+      document.getElementById('lock-locked').style.display='none';
+      document.getElementById('pin-grid').style.opacity='1';
+      document.getElementById('pin-grid').style.pointerEvents='';
+    }
+  };
+  topbar.appendChild(btn);
+}
+
+function initLockScreen(){
+  // If valid session exists → skip lock
+  if(hasSession()&&getStoredPin()){
+    unlockApp();
+    setTimeout(addLogoutBtn,100);
+    return;
+  }
+  // If no PIN set → show setup
+  if(!getStoredPin()){
+    document.querySelector('.lock-sub').textContent='Tạo mã PIN để bảo vệ CRM của bạn';
+    setTimeout(showSetPin,400);
+    return;
+  }
+  // If locked → show timer
+  if(isLocked()){showLockTimer()}
+}
+
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 // ══════════════════════════════════════════
@@ -1031,7 +1486,7 @@ function toggleMenu(){document.getElementById('sidebar').classList.toggle('open'
 // ══════════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════════
-const ALL_TABS=['clients','pipeline','calendar','dashboard','reports','catalog','docs','import'];
+const ALL_TABS=['clients','pipeline','calendar','dashboard','reports','catalog','docs','import','ai'];
 function showTab(name){
   document.querySelectorAll('.tc').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+name).style.display='block';
@@ -1047,6 +1502,7 @@ function showTab(name){
   if(name==='calendar')renderCalendar();
   if(name==='dashboard')renderDashboard();
   if(name==='reports')renderReports();
+  if(name==='ai'){renderAITab();}
 }
 
 // ══════════════════════════════════════════
@@ -2565,8 +3021,252 @@ async function initWithDiag(){
   }
 }
 
+// ══════════════════════════════════════════
+//  AI CORE — ANTHROPIC API
+// ══════════════════════════════════════════
+const AI_MODEL='claude-sonnet-4-20250514';
+const AI_KEY_STORE='bds_ai_key';
+let aiChatHistory=[];
+let currentAnalyzeId=null;
+let _zdClientId=null;
+
+function getApiKey(){return localStorage.getItem(AI_KEY_STORE)||''}
+function saveApiKey(){
+  const v=(document.getElementById('api-key-inp')?.value||'').trim();
+  if(!v){toast('Nhập API key!');return}
+  localStorage.setItem(AI_KEY_STORE,v);
+  document.getElementById('api-key-bar').style.background='var(--green-l)';
+  toast('Đã lưu API key ✅');renderAITab();
+}
+
+function buildCRMContext(){
+  const now=new Date().toLocaleDateString('vi-VN');
+  const hot=allClients.filter(c=>c.status==='Hot').length;
+  const warm=allClients.filter(c=>c.status==='Warm').length;
+  const closed=allClients.filter(c=>c.status==='Đã chốt').length;
+  const d=new Date();d.setHours(0,0,0,0);
+  const overdue=allClients.filter(c=>c.followup&&new Date(c.followup)<d);
+  const upcoming=allClients.filter(c=>{
+    if(!c.followup)return false;
+    const diff=(new Date(c.followup)-d)/86400000;
+    return diff>=0&&diff<=7;
+  });
+  const recentClients=allClients.slice(0,10).map(c=>`- ${c.name} | ${c.phone||''} | ${c.project||''} | ${c.status} | Budget: ${c.budget||'?'} | Score: ${calcScore(c)} | Follow: ${c.followup||'chua dat'}`).join('\n');
+  const unitsSummary=units.filter(u=>u.status==='available').slice(0,15).map(u=>`- ${u.name} | ${u.project} | ${u.price} | ${u.type||''} | ${u.area||''}`).join('\n');
+  const comms=lc('commissions')||[];
+  const totalComm=comms.reduce((a,c)=>a+(c.amount||0),0);
+  return `BAN LA AI TRO LY BDS CHUYEN NGHIEP. Ngay hom nay: ${now}.
+DU LIEU CRM: Tong khach: ${allClients.length} | Hot: ${hot} | Warm: ${warm} | Da chot: ${closed}
+Qua han follow: ${overdue.length} khach (${overdue.slice(0,3).map(c=>c.name).join(', ')})
+Follow tuan nay: ${upcoming.length} khach
+Tong hoa hong: ${fmtMoney(totalComm)}
+10 KHACH GAN DAY:\n${recentClients}
+CAN HO DANG BAN:\n${unitsSummary}
+Tra loi ngan gon thuc te bang tieng Viet. Khi de cap khach hang dung dung ten.`;
+}
+
+async function callAI(messages,systemPrompt,maxTokens){
+  const key=getApiKey();
+  if(!key)throw new Error('Chua co API key — vao tab AI Tro ly de nhap');
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:AI_MODEL,
+      max_tokens:maxTokens||800,
+      system:systemPrompt||buildCRMContext(),
+      messages
+    })
+  });
+  if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||'Loi API: '+resp.status)}
+  const data=await resp.json();
+  return data.content?.[0]?.text||'';
+}
+
+// ══ CHAT TAB ══
+function renderAITab(){
+  const key=getApiKey();
+  const bar=document.getElementById('api-key-bar');
+  const inp=document.getElementById('api-key-inp');
+  if(key){if(bar)bar.style.background='var(--green-l)';if(inp)inp.value='••••••'+key.slice(-4);}
+}
+
+function appendAIMsg(role,text){
+  const body=document.getElementById('ai-chat-body');if(!body)return;
+  const isUser=role==='user';
+  const div=document.createElement('div');
+  div.className='ai-msg '+(isUser?'user':'bot');
+  div.innerHTML=`<div class="ai-avatar">${isUser?'👤':'🤖'}</div><div class="ai-bubble">${esc(text).replace(/\n/g,'<br>')}</div>`;
+  body.appendChild(div);body.scrollTop=body.scrollHeight;
+}
+
+function showAITyping(){
+  const body=document.getElementById('ai-chat-body');if(!body)return;
+  const div=document.createElement('div');
+  div.className='ai-msg bot';div.id='ai-typing-indicator';
+  div.innerHTML='<div class="ai-avatar">🤖</div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
+  body.appendChild(div);body.scrollTop=body.scrollHeight;
+}
+function hideAITyping(){document.getElementById('ai-typing-indicator')?.remove()}
+
+async function sendAIMsg(){
+  const inp=document.getElementById('ai-input');
+  const text=(inp?.value||'').trim();if(!text)return;
+  if(!getApiKey()){toast('Nhap API key trong tab AI Tro ly truoc!');showTab('ai');return}
+  inp.value='';inp.style.height='auto';
+  appendAIMsg('user',text);
+  aiChatHistory.push({role:'user',content:text});
+  document.getElementById('ai-send-btn').disabled=true;
+  showAITyping();
+  try{
+    const reply=await callAI(aiChatHistory.slice(-10),buildCRMContext(),1000);
+    hideAITyping();aiChatHistory.push({role:'assistant',content:reply});appendAIMsg('bot',reply);
+  }catch(e){hideAITyping();appendAIMsg('bot','Loi: '+e.message)}
+  document.getElementById('ai-send-btn').disabled=false;
+}
+
+function aiQuick(text){const inp=document.getElementById('ai-input');if(inp){inp.value=text;sendAIMsg()}}
+function clearAIChat(){aiChatHistory=[];const body=document.getElementById('ai-chat-body');if(body){body.innerHTML='';appendAIMsg('bot','Chat da xoa. Hoi toi bat cu dieu gi! 🤖')}}
+
+// ══ AI PHAN TICH ══
+async function openAIAnalyze(id){
+  currentAnalyzeId=id;
+  const c=allClients.find(x=>x.id===id);if(!c)return;
+  if(!getApiKey()){toast('Nhap API key truoc!');showTab('ai');return}
+  document.getElementById('aa-title').textContent='AI phan tich: '+c.name;
+  document.getElementById('aa-sub').textContent=c.project+' · '+c.status+' · Score: '+calcScore(c);
+  document.getElementById('aa-loading').style.display='block';
+  document.getElementById('aa-result').style.display='none';
+  document.getElementById('modal-ai-analyze').style.display='flex';
+  const notes=(c.notes||[]).slice(0,5).map(n=>n.date+': '+n.text).join('\n');
+  const prompt='Phan tich khach hang BDS:\nTen: '+c.name+'\nSDT: '+(c.phone||'Chua co')+'\nDu an: '+(c.project||'Chua ro')+'\nNgan sach: '+(c.budget||'Chua biet')+'\nTrang thai: '+c.status+'\nScore: '+calcScore(c)+'/100\nFollow: '+(c.followup||'Chua dat')+'\nGhi chu:\n'+(notes||'Chua co')+'\n\nPhan tich:\n1. Tiem nang chot deal (cao/trung/thap) va ly do\n2. 3 hanh dong cu the nen lam ngay trong 48h\n3. Goi y cach tiep can phu hop\n4. Rui ro can luu y\nTra loi ngan gon, dung tieng Viet.';
+  try{
+    const reply=await callAI([{role:'user',content:prompt}],null,900);
+    document.getElementById('aa-loading').style.display='none';
+    document.getElementById('aa-result').style.display='block';
+    document.getElementById('aa-content').textContent=reply;
+  }catch(e){
+    document.getElementById('aa-loading').style.display='none';
+    document.getElementById('aa-result').style.display='block';
+    document.getElementById('aa-content').textContent='Loi: '+e.message;
+  }
+}
+function copyAIAnalysis(){navigator.clipboard.writeText(document.getElementById('aa-content')?.textContent||'').then(()=>toast('Da copy phan tich!'))}
+
+// ══ GOI Y CAN HO ══
+async function aiMatchUnitsForClient(id){
+  const c=allClients.find(x=>x.id===id);if(!c)return;
+  if(!getApiKey()){toast('Nhap API key truoc!');showTab('ai');return}
+  const avail=units.filter(u=>u.status==='available');
+  if(!avail.length){toast('Chua co can ho nao!');return}
+  const uList=avail.map(u=>u.name+'|'+u.project+'|'+(u.price||'?')+'|'+(u.type||'')+'|'+(u.area||'')).join('\n');
+  const prompt='Khach: '+c.name+', ngan sach: '+(c.budget||'chua biet')+', du an: '+(c.project||'chua xac dinh')+'.\nGhi chu: '+((c.notes||[]).slice(0,2).map(n=>n.text).join('; ')||'Khong co')+'\nDanh sach can co:\n'+uList+'\nGoi y TOP 3 can phu hop nhat. Format: Ten can - ly do ngan gon.';
+  const detailBox=document.getElementById('detail-ai-units');
+  const aaBox=document.getElementById('aa-units-result');
+  const box=document.getElementById('modal-detail').style.display!=='none'?detailBox:aaBox;
+  if(!box)return;
+  box.style.display='block';box.textContent='Tim can phu hop...';
+  try{const r=await callAI([{role:'user',content:prompt}],null,400);box.textContent='Goi y can cho '+c.name+':\n\n'+r}
+  catch(e){box.textContent='Loi: '+e.message}
+}
+
+// ══ SOAN TIN ZALO ══
+function openZaloDraft(id){
+  const c=allClients.find(x=>x.id===id);if(!c)return;
+  _zdClientId=id;
+  const info=document.getElementById('zd-client-info');
+  if(info)info.innerHTML='<b>'+esc(c.name)+'</b> · '+esc(c.phone||'')+'<span class="badge '+bc(c.status)+'" style="margin-left:6px">'+c.status+'</span>';
+  document.getElementById('zd-result').style.display='none';
+  document.getElementById('zd-result').textContent='';
+  document.getElementById('zd-actions').style.display='none';
+  document.getElementById('zd-purpose').value='followup';
+  document.getElementById('zd-custom-wrap').style.display='none';
+  document.getElementById('modal-zalo-draft').style.display='flex';
+  document.getElementById('zd-purpose').onchange=function(){document.getElementById('zd-custom-wrap').style.display=this.value==='custom'?'block':'none'};
+}
+
+async function generateZaloMsg(){
+  const c=allClients.find(x=>x.id===_zdClientId);if(!c)return;
+  if(!getApiKey()){toast('Nhap API key truoc!');return}
+  const purpose=document.getElementById('zd-purpose').value;
+  const tone=document.getElementById('zd-tone').value;
+  const custom=document.getElementById('zd-custom').value;
+  const purposeMap={followup:'Follow-up sau lan gap',remind:'Nhac lich hen sap toi',introduce:'Gioi thieu du an moi',checkin:'Hoi tham cham soc',priceupdate:'Cap nhat gia/chinh sach',closingsoon:'Thuc day quyet dinh vi sap het hang',custom:custom};
+  const toneMap={friendly:'than thien gan gui',professional:'chuyen nghiep lich su',urgent:'tao cam giac cap bach',caring:'quan tam cham soc'};
+  const btn=document.getElementById('zd-gen-btn');
+  btn.disabled=true;btn.textContent='Dang soan...';
+  const notes=(c.notes||[]).slice(0,2).map(n=>n.text).join('; ');
+  const prompt='Soan 1 tin Zalo BDS:\n- Ten khach: '+c.name+'\n- Du an: '+(c.project||'dang tim')+'\n- Ngan sach: '+(c.budget||'chua ro')+'\n- Trang thai: '+c.status+'\n- Ghi chu: '+(notes||'Chua co')+'\n- Muc dich: '+purposeMap[purpose]+'\n- Giong: '+toneMap[tone]+'\nYeu cau: Tu nhien, duoi 150 chu, khong copy mau, co chao ten khach, toi da 2 emoji. Chi tra ve noi dung tin nhan.';
+  try{
+    const reply=await callAI([{role:'user',content:prompt}],null,300);
+    document.getElementById('zd-result').style.display='block';
+    document.getElementById('zd-result').textContent=reply;
+    document.getElementById('zd-actions').style.display='block';
+    const zLink=document.getElementById('zd-zalo-link');
+    if(zLink&&c.phone)zLink.href=zaloUrl(c);
+  }catch(e){
+    document.getElementById('zd-result').style.display='block';
+    document.getElementById('zd-result').textContent='Loi: '+e.message;
+  }
+  btn.disabled=false;btn.textContent='🤖 AI soan tin nhan';
+}
+function copyZaloMsg(){navigator.clipboard.writeText(document.getElementById('zd-result')?.textContent||'').then(()=>toast('Da copy! Paste vao Zalo nhe 💬'))}
+function regenerateZaloMsg(){document.getElementById('zd-result').style.display='none';generateZaloMsg()}
+
+// ══ BAO CAO NGAY ══
+async function aiDailyReport(){
+  if(!getApiKey()){toast('Nhap API key truoc!');showTab('ai');return}
+  showTab('ai');
+  const d=new Date();d.setHours(0,0,0,0);
+  const overdue=allClients.filter(c=>c.followup&&new Date(c.followup)<d);
+  const todayF=allClients.filter(c=>c.followup===new Date().toISOString().slice(0,10));
+  const hot=allClients.filter(c=>c.status==='Hot');
+  const comms=lc('commissions')||[];
+  const m=new Date();m.setDate(1);m.setHours(0,0,0,0);
+  const mComm=comms.filter(c=>c.date&&new Date(c.date)>=m).reduce((a,c)=>a+(c.amount||0),0);
+  appendAIMsg('user','Bao cao tong ket ngay hom nay');
+  aiChatHistory.push({role:'user',content:'Bao cao tong ket ngay hom nay'});
+  showAITyping();
+  const prompt='Tom tat ngay '+new Date().toLocaleDateString('vi-VN')+':\n- Tong: '+allClients.length+' khach | Hot: '+hot.length+' | Hoa hong thang: '+fmtMoney(mComm)+'\n- Follow hom nay: '+todayF.length+' khach ('+todayF.map(c=>c.name).join(', ')+')\n- Qua han: '+overdue.length+' khach ('+overdue.slice(0,3).map(c=>c.name+'('+c.followup+')').join(', ')+')\n- Top Hot: '+hot.slice(0,3).map(c=>c.name+' - '+c.project).join('; ')+'\nViet bao cao ngan nhu daily briefing sang som + 3 viec uu tien hom nay. Tieng Viet.';
+  try{
+    const r=await callAI([{role:'user',content:prompt}],null,600);
+    hideAITyping();aiChatHistory.push({role:'assistant',content:r});appendAIMsg('bot',r);
+  }catch(e){hideAITyping();appendAIMsg('bot','Loi: '+e.message)}
+}
+
+// ══ BROWSER NOTIFICATIONS ══
+async function requestNotifPermission(){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='default')await Notification.requestPermission();
+}
+
+function checkFollowUpNotifs(){
+  if(Notification.permission!=='granted')return;
+  const today=new Date().toISOString().slice(0,10);
+  const d=new Date();d.setHours(0,0,0,0);
+  const due=allClients.filter(c=>c.followup&&(c.followup===today||new Date(c.followup)<d));
+  due.slice(0,3).forEach(c=>{
+    try{new Notification('BDS Pro — '+(new Date(c.followup)<d?'Qua han':'Follow hom nay')+': '+c.name,{body:c.project+' · '+(c.phone||''),tag:'crm-'+c.id})}catch(e){}
+  });
+  const dot=document.getElementById('ai-notif-dot');
+  if(dot)dot.style.display=due.length?'inline-block':'none';
+}
+
+function initNotifications(){
+  requestNotifPermission();
+  setTimeout(checkFollowUpNotifs,3000);
+  setInterval(checkFollowUpNotifs,1800000);
+}
+
 // START
-initWithDiag();
+// Init handled by initLockScreen()
+initLockScreen();
+addLogoutBtn();
 </script>
 </body>
 </html>
